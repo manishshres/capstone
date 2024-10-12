@@ -47,4 +47,30 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+exports.updateServices = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const servicesData = req.body;
+
+    await organizationService.updateServices(userId, servicesData);
+
+    logger.info(`Services updated for organization: ${userId}`);
+    res.status(200).json({ message: "Services updated successfully" });
+  } catch (error) {
+    logger.error("Error updating services:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getServices = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const services = await organizationService.getOrganizationServices(userId);
+    res.status(200).json(services);
+  } catch (error) {
+    logger.error("Error fetching organization services:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.checkOrgAccountType = checkOrgAccountType;

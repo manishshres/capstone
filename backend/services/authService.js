@@ -43,6 +43,9 @@ exports.register = async (email, password, name, accountType) => {
           name,
           email,
         },
+        services: {},
+        inventory: {},
+        hours: {},
         created_at: new Date(),
         updated_at: new Date(),
       });

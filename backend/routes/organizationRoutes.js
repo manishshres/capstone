@@ -10,4 +10,8 @@ router.use(authenticateToken, organizationController.checkOrgAccountType);
 router.post("/profile", organizationController.createOrUpdateProfile);
 router.get("/profile", organizationController.getProfile);
 
+// Services routes
+router.post("/services", organizationController.updateServices);
+router.get("/services", organizationController.getServices);
+
 module.exports = router;

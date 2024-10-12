@@ -26,6 +26,32 @@ exports.createOrUpdateProfile = async (userId, profileData) => {
   return { success: true, upsertedId: result.upsertedId };
 };
 
+exports.getOrganizationServices = async (userId) => {
+  const organization = await getOrganizationDocument(userId);
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+  console.log(organization);
+  return organization.services;
+};
+
+exports.updateServices = async (userId, servicesData) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+
+  await organizations.updateOne(
+    { userId: userId },
+    {
+      $set: {
+        services: servicesData,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return { success: true };
+};
+
 exports.getOrganizationProfile = async (userId) => {
   const organization = await getOrganizationDocument(userId);
   if (!organization) {
