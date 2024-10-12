@@ -26,9 +26,8 @@ const Profile = () => {
     const fetchOrganizationData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.post(
+        const response = await axios.get(
           "http://localhost:3000/api/organization/profile",
-          formData,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,14 +63,15 @@ const Profile = () => {
     setIsSaving(true);
 
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:3000/api/organization/profile",
+        formData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
-        },
-        formData
+        }
       );
       console.log("Response:", response.data);
       showToast("Organization profile updated successfully.", "success");
