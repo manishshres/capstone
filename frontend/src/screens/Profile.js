@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+
 import axios from "axios";
 
 const Profile = () => {
@@ -6,27 +8,48 @@ const Profile = () => {
     name: "",
     type: "",
     address: "",
+    address2: "",
     city: "",
     state: "",
-    zip_code: "",
+    zip: "",
+    phone: "",
     latitude: "",
     longitude: "",
-    phone_number: "",
     email: "",
     website: "",
-    description: "",
-    services: "",
-    hours_of_operation: "",
-    capacity: "",
-    restrictions: "",
-    requirements: "",
-    external_id: "",
-    status: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [shelters, setShelters] = useState([]);
+  useEffect(() => {
+    const fetchOrganizationData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.post(
+          "http://localhost:3000/api/organization/profile",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("Response:", response.data);
+        setFormData(response.data);
+      } catch (error) {
+        console.error("Error fetching organization data:", error);
+        showToast(
+          "Failed to load organization data. Please try again.",
+          "error"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganizationData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,148 +59,361 @@ const Profile = () => {
     }));
   };
 
-  const saveShelters = async () => {
-    setIsLoading(true);
-    setError(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `http://localhost:3000/api/organizations`,
+      const response = await axios.post(
+        "http://localhost:3000/api/organization/profile",
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        }
+        },
+        formData
       );
-      setShelters(response.data);
+      console.log("Response:", response.data);
+      showToast("Organization profile updated successfully.", "success");
     } catch (error) {
-      setError("An error occurred while fetching shelters. Please try again.");
+      console.error("Error:", error);
+      showToast(
+        "Failed to update organization profile. Please try again.",
+        "error"
+      );
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    saveShelters();
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
+  const states = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-        Organization Profile
-      </h2>
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-md px-8 pt-6 pb-8 mb-4"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Form fields */}
-          <div>
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="name"
-            >
-              Name
-            </label>
-            <input
-              className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Organization Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row">
+      <nav className="w-full md:w-48 bg-white shadow-md rounded-md p-4 mb-4 md:mr-4 md:mb-0">
+        <ul className="space-y-2">
+          <li className="bg-blue-100 p-2 rounded">
+            <Link href="/profile">Profile</Link>
+          </li>
+          <li className="p-2">Services</li>
+          <li className="p-2">Inventory</li>
+          <li className="p-2">Hours</li>
+        </ul>
+      </nav>
+      <div className="flex-grow">
+        <h2 className="text-3xl font-extrabold text-center text-black mb-6">
+          Organization Profile
+        </h2>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white shadow-md rounded-md px-8 pt-6 pb-8 mb-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="name"
+              >
+                Name
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Organization Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="type"
+              >
+                Type
+              </label>
+              <select
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="type"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                placeholder="Organization Type"
+                required
+              >
+                <option value="shelter">Shelter</option>
+                <option value="food_bank">Food Bank</option>
+              </select>
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="address"
+              >
+                Address
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="address"
+                name="address"
+                type="text"
+                placeholder="1234 Main St"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="address2"
+              >
+                Address 2
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="address2"
+                name="address2"
+                type="text"
+                placeholder="Apartment, studio or floor"
+                value={formData.address2}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="city"
+              >
+                City
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="city"
+                name="city"
+                type="text"
+                placeholder="City"
+                value={formData.city}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="state"
+              >
+                State
+              </label>
+              <select
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Choose...</option>
+                {states.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="zip"
+              >
+                Zip
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="zip"
+                name="zip"
+                type="text"
+                placeholder="Zip Code"
+                value={formData.zip}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="phone"
+              >
+                Phone
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="Phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="latitude"
+              >
+                Latitude
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="latitude"
+                name="latitude"
+                type="text"
+                placeholder="Latitude"
+                value={formData.latitude}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="longitude"
+              >
+                Longitude
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="longitude"
+                name="longitude"
+                type="text"
+                placeholder="Longitude"
+                value={formData.longitude}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="email"
+              >
+                Email
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="website"
+              >
+                Website
+              </label>
+              <input
+                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="website"
+                name="website"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={handleChange}
+              />
+            </div>
           </div>
-          <div>
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="type"
+          <div className="mt-6">
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-glaucous text-white font-semibold rounded-md shadow-md hover:bg-glaucous/90 focus:outline-none focus:ring-2 focus:ring-glaucous focus:ring-offset-2 transition duration-150 ease-in-out"
+              disabled={isSaving}
             >
-              Type
-            </label>
-            <select
-              className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Type</option>
-              <option value="shelter">Shelter</option>
-              <option value="food_bank">Food Bank</option>
-              <option value="health_clinic">Health Clinic</option>
-            </select>
+              {isSaving ? "Saving..." : "Save"}
+            </button>
           </div>
-          <div>
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="address"
-            >
-              Address
-            </label>
-            <input
-              className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="address"
-              name="address"
-              type="text"
-              placeholder="1234 Main St"
-              value={formData.address}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          {/* Add other fields as needed... */}
-          <div>
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="latitude"
-            >
-              Latitude
-            </label>
-            <input
-              className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="latitude"
-              name="latitude"
-              type="text" // or "number"
-              placeholder="Latitude"
-              value={formData.latitude}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="longitude"
-            >
-              Longitude
-            </label>
-            <input
-              className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="longitude"
-              name="longitude"
-              type="text" // or "number"
-              placeholder="Longitude"
-              value={formData.longitude}
-              onChange={handleChange}
-            />
-          </div>
-          {/* ... other fields */}
+        </form>
+      </div>
+      {toast && (
+        <div
+          className={`fixed top-4 center-4 px-4 py-2 rounded ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          } text-white`}
+        >
+          {toast.message}
         </div>
-        <div className="mt-6">
-          <button
-            type="submit"
-            className="w-full bg-glaucous hover:bg-glaucous/90 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline"
-          >
-            Save
-          </button>
-        </div>
-      </form>
-      {isLoading && <p>Loading...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      )}
     </div>
   );
 };

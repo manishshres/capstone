@@ -23,8 +23,8 @@ app.use(bodyParser.json());
 // Route for related actions
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
+app.use("/api/organization", organizationRoutes);
 app.use("/api", shelterRoutes);
-app.use("/api", organizationRoutes);
 
 // Global error handling middleware
 app.use(errorHandler);

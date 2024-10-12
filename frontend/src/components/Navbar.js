@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
+import Dashboard from "../screens/Dashboard";
 
 const Navbar = () => {
   const { authState, logout } = useContext(AuthContext);
@@ -14,9 +15,21 @@ const Navbar = () => {
         <nav>
           {authState.isAuthenticated ? (
             <>
-              <span className="text-white mr-4">
+              {/* <span className="text-white mr-4">
                 Welcome, {authState.user.email || "User"}
-              </span>
+              </span> */}
+              <Link
+                to="/dashboard"
+                className="bg-glaucous-400 hover:bg-glaucous-500 text-white font-semibold py-2 px-4 rounded shadow mr-2 transition duration-300"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/profile"
+                className="bg-glaucous-400 hover:bg-glaucous-500 text-white font-semibold py-2 px-4 rounded shadow mr-2 transition duration-300"
+              >
+                Profile
+              </Link>
               <button
                 onClick={logout}
                 className="bg-saffron hover:bg-saffron-600 text-black font-bold py-2 px-4 rounded shadow transition duration-300"
