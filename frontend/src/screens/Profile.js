@@ -157,9 +157,11 @@ const Profile = () => {
       <nav className="w-full md:w-48 bg-white shadow-md rounded-md p-4 mb-4 md:mr-4 md:mb-0">
         <ul className="space-y-2">
           <li className="bg-blue-100 p-2 rounded">
-            <Link href="/profile">Profile</Link>
+            <Link to="/profile">Profile</Link>
           </li>
-          <li className="p-2">Services</li>
+          <li className="p-2">
+            <Link to="/services">Services</Link>
+          </li>
           <li className="p-2">Inventory</li>
           <li className="p-2">Hours</li>
         </ul>

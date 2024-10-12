@@ -8,6 +8,7 @@ import AuthProvider from "./contexts/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Dashboard from "./screens/Dashboard";
 import Profile from "./screens/Profile";
+import Services from "./screens/Services";
 
 function App() {
   return (
@@ -30,6 +31,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <Profile />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/services"
+              element={
+                <PrivateRoute>
+                  <Services />
                 </PrivateRoute>
               }
             />
