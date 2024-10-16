@@ -1,11 +1,24 @@
 import React from "react";
 
 const ShelterList = ({ shelters, onShelterSelect }) => {
+  if (!Array.isArray(shelters) || shelters.length === 0) {
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex cursor-pointer">
+          <div className="items-center justify-center p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+              Please enter city,state or zipcode, to search for shelters.
+            </h3>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-1 gap-6">
       {shelters.map((shelter) => (
         <div
-          key={shelter.id}
+          key={shelter.name.replace(/\s/g, "")}
           className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex cursor-pointer"
           onClick={() => onShelterSelect(shelter)}
         >
