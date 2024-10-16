@@ -1,14 +1,13 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
-const ShelterList = ({ shelters }) => {
+const ShelterList = ({ shelters, onShelterSelect }) => {
   return (
     <div className="grid grid-cols-1 gap-6">
       {shelters.map((shelter) => (
-        <Link
+        <div
           key={shelter.id}
-          to={`/shelters/${shelter.id}`}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex cursor-pointer"
+          onClick={() => onShelterSelect(shelter)}
         >
           <div className="w-[150px] h-full flex-shrink-0 flex items-center justify-center ">
             <div className="w-[150px] h-[150px] overflow-hidden my-2 ml-4 rounded-md">
@@ -41,7 +40,7 @@ const ShelterList = ({ shelters }) => {
               </span>
             </div>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   );

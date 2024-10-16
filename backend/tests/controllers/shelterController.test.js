@@ -22,6 +22,28 @@ describe("Shelter Controller", () => {
     console.error = jest.fn();
   });
 
+  test("should return a shelter by ID if id parameter is provided", async () => {
+    const mockShelter = { id: "123", name: "Shelter 1" };
+    shelterService.getShelterById.mockResolvedValue(mockShelter);
+
+    req.query.id = "123";
+    await getShelters(req, res);
+
+    expect(shelterService.getShelterById).toHaveBeenCalledWith("123");
+    expect(res.json).toHaveBeenCalledWith(mockShelter);
+  });
+
+  test("should return 404 if shelter is not found by ID", async () => {
+    shelterService.getShelterById.mockResolvedValue(null);
+
+    req.query.id = "fake";
+    await getShelters(req, res);
+
+    expect(shelterService.getShelterById).toHaveBeenCalledWith("fake");
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: "Shelter not found" });
+  });
+
   test("should return 400 if search parameter is missing", async () => {
     await getShelters(req, res);
 

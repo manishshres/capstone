@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+
 import axios from "axios";
 import ShelterList from "../components/ShelterList";
+import ShelterDetails from "../components/ShelterDetails";
 
 const Dashboard = () => {
   const [shelters, setShelters] = useState([]);
@@ -8,6 +11,7 @@ const Dashboard = () => {
   const [serviceType, setServiceType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedShelter, setSelectedShelter] = useState(null);
 
   const fetchShelters = async () => {
     setIsLoading(true);
@@ -24,7 +28,6 @@ const Dashboard = () => {
       );
       setShelters(response.data);
     } catch (error) {
-      // console.error("Error fetching shelters:", error);
       setError("An error occurred while fetching shelters. Please try again.");
     } finally {
       setIsLoading(false);
@@ -35,6 +38,14 @@ const Dashboard = () => {
     e.preventDefault();
     fetchShelters();
   };
+
+  const handleShelterSelect = (shelter) => {
+    setSelectedShelter(shelter);
+  };
+
+  if (selectedShelter) {
+    return <ShelterDetails shelter={selectedShelter} />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -71,7 +82,10 @@ const Dashboard = () => {
       {isLoading ? (
         <div className="text-center">Loading...</div>
       ) : (
-        <ShelterList shelters={shelters} />
+        <ShelterList
+          shelters={shelters}
+          onShelterSelect={handleShelterSelect}
+        />
       )}
 
       {shelters.length > 0 && (
@@ -80,36 +94,21 @@ const Dashboard = () => {
             className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
             aria-label="Pagination"
           >
-            <a
-              href="#"
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
+            <link className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
               Previous
-            </a>
-            <a
-              href="#"
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+            </link>
+            <link className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               1
-            </a>
-            <a
-              href="#"
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+            </link>
+            <link className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               2
-            </a>
-            <a
-              href="#"
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+            </link>
+            <link className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               3
-            </a>
-            <a
-              href="#"
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
+            </link>
+            <link className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
               Next
-            </a>
+            </link>
           </nav>
         </div>
       )}

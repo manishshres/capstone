@@ -2,7 +2,15 @@ const shelterService = require("../services/shelterService");
 
 const getShelters = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, id } = req.query;
+
+    if (id) {
+      const shelter = await shelterService.getShelterById(id);
+      if (!shelter) {
+        return res.status(404).json({ error: "Shelter not found" });
+      }
+      return res.json(shelter);
+    }
 
     if (!search) {
       return res.status(400).json({ error: "Search parameter is required" });
@@ -27,12 +35,10 @@ const getShelters = async (req, res) => {
     }
     // If none of the above, return an error
     else {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Invalid search format. Please use zipcode, lat,lng, or city,state",
-        });
+      return res.status(400).json({
+        error:
+          "Invalid search format. Please use zipcode, lat,lng, or city,state",
+      });
     }
 
     res.json(shelters);

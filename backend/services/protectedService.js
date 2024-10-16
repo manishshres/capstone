@@ -1,21 +1,24 @@
-// backend/services/protectedService.js
-exports.getUserProfile = async (userId) => {
+const { connectToDatabase } = require("../config/mongoDbClient");
+
+const addOrganization = async (organizationData, userId) => {
   try {
-    // Simulating a database call to fetch user profile based on userId
-    if (userId === "invalid-id") {
-      throw new Error("Error fetching user profile");
-    }
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
 
-    const userProfile = {
-      id: userId,
-      name: "Test User",
-      email: "testuser@gmail.com",
-      role: "user",
-    };
+    const result = await organizations.insertOne({
+      ...organizationData,
+      user_id: userId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
 
-    // In a real-world scenario, this would fetch from the database
-    return { userProfile };
+    return { data: result.insertedId };
   } catch (error) {
-    throw new Error("Error fetching user profile");
+    console.error("Error inserting organization into the database:", error);
+    return { error: error.message };
   }
+};
+
+module.exports = {
+  addOrganization,
 };

@@ -53,8 +53,13 @@ const getSheltersByStateCity = (state, city) => {
   );
 };
 
+const getShelterById = (id) => {
+  return makeApiRequest(`/shelter?id=${id}`);
+};
+
 module.exports = {
   getSheltersByZipcode,
   getSheltersByLocation,
   getSheltersByStateCity,
+  getShelterById,
 };
