@@ -4,8 +4,10 @@ import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
 
 const Register = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accountType, setAccountType] = useState("user");
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -13,30 +15,28 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    // Form submission logic remains the same
+    e.preventDefault();
+    setIsLoading(true);
+    setErrors({});
+
     try {
       const response = await axios.post(
         "http://localhost:3000/api/auth/register",
-        {
-          email,
-          password,
-        }
+        { name, email, password, accountType }
       );
 
-      // Use the login method from AuthContext
       login(response.data.token);
-
-      setSuccessMessage(response.data.message);
+      setSuccessMessage("Account created successfully!");
       setIsLoading(false);
-      navigate("/"); // Redirect to home or dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 650); // Redirect to dashboard
     } catch (err) {
       setIsLoading(false);
       if (err.response) {
         if (err.response.data.error) {
-          // General error
           setErrors({ general: err.response.data.error });
         } else {
-          // Field-specific errors
           setErrors(err.response.data);
         }
       } else {
@@ -67,6 +67,26 @@ const Register = () => {
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-glaucous-700"
+          >
+            Name
+          </label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-glaucous-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron focus:border-saffron"
+          />
+          {errors.name && (
+            <p className="mt-2 text-sm text-red-600">{errors.name}</p>
+          )}
+        </div>
         <div>
           <label
             htmlFor="email"
@@ -107,6 +127,27 @@ const Register = () => {
           />
           {errors.password && (
             <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+          )}
+        </div>
+        <div>
+          <label
+            htmlFor="accountType"
+            className="block text-sm font-medium text-glaucous-700"
+          >
+            Account Type
+          </label>
+          <select
+            id="accountType"
+            name="accountType"
+            value={accountType}
+            onChange={(e) => setAccountType(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-glaucous-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron focus:border-saffron"
+          >
+            <option value="user">User</option>
+            <option value="org">Organization</option>
+          </select>
+          {errors.accountType && (
+            <p className="mt-2 text-sm text-red-600">{errors.accountType}</p>
           )}
         </div>
         <div>
