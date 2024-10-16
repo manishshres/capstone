@@ -15,7 +15,7 @@ const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (authState.token) {
         try {
-          const response = await axios.get("http://localhost:3000/api/", {
+          const response = await axios.get("http://localhost:3000/api/auth", {
             headers: {
               Authorization: `Bearer ${authState.token}`,
             },

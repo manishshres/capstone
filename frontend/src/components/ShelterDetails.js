@@ -5,13 +5,16 @@ const ShelterDetails = ({ shelter }) => {
   const navigate = useNavigate();
 
   if (!shelter) {
-    navigate("/");
+    navigate("/dashboard");
     return null;
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link to="/" className="text-glaucous hover:underline mb-4 inline-block">
+      <Link
+        to="/dashboard"
+        className="text-glaucous hover:underline mb-4 inline-block"
+      >
         ← Back
       </Link>
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">

@@ -90,3 +90,15 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// check auth status
+exports.authStatus = async (req, res) => {
+  try {
+    res.status(200).json({
+      message: `Logged in!`,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
