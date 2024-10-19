@@ -193,4 +193,49 @@ describe("Organization Controller", () => {
       expect(next).not.toHaveBeenCalled();
     });
   });
+
+  describe("getProfile", () => {
+    it("should retrieve profile successfully", async () => {
+      const mockProfile = { name: "Test Org", address: "123 Test St" };
+      organizationService.getOrganizationProfile.mockResolvedValue(mockProfile);
+
+      await organizationController.getProfile(req, res);
+
+      expect(organizationService.getOrganizationProfile).toHaveBeenCalledWith(
+        "testUserId"
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockProfile);
+    });
+
+    it("should return 404 when profile is not found", async () => {
+      const error = new Error("Organization profile not found");
+      organizationService.getOrganizationProfile.mockRejectedValue(error);
+
+      await organizationController.getProfile(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Organization profile not found",
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        "Error fetching organization profile:",
+        error
+      );
+    });
+
+    it("should return 500 for other errors", async () => {
+      const error = new Error("Database connection error");
+      organizationService.getOrganizationProfile.mockRejectedValue(error);
+
+      await organizationController.getProfile(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+      expect(logger.error).toHaveBeenCalledWith(
+        "Error fetching organization profile:",
+        error
+      );
+    });
+  });
 });

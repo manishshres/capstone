@@ -60,7 +60,7 @@ exports.register = async (email, password, name, accountType) => {
       },
     };
   } catch (error) {
-    console.error("Registration error:", error);
+    // console.error("Registration error:", error);
     return { error: error.message };
   }
 };
@@ -81,7 +81,8 @@ exports.login = async (email, password) => {
     const users = db.collection("users");
     const userData = await users.findOne({ _id: data.user.id });
     if (!userData) {
-      throw new Error("User data not found in MongoDB");
+      //throw new Error("User data not found in MongoDB");
+      return { error: "User data not found in MongoDB" };
     }
     console.log(userData);
 

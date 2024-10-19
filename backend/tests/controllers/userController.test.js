@@ -1,7 +1,7 @@
-const protectedController = require("../../controllers/protectedController");
-const protectedService = require("../../services/protectedService");
+const protectedController = require("../../controllers/userController");
+const protectedService = require("../../services/userService");
 
-jest.mock("../../services/protectedService");
+jest.mock("../../services/userService");
 jest.mock("../../utils/logger");
 
 describe("Protected Controller", () => {

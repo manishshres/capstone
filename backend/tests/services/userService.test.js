@@ -1,5 +1,5 @@
 // backend/tests/middlewares/protectedService.test.js
-const protectedService = require("../../services/protectedService");
+const protectedService = require("../../services/userService");
 
 describe("Protected Service", () => {
   it("should fetch user profile successfully", async () => {
