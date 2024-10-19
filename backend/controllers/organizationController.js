@@ -73,4 +73,32 @@ exports.getServices = async (req, res) => {
   }
 };
 
+exports.updateInventory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const inventoryData = req.body;
+
+    await organizationService.updateInventory(userId, inventoryData);
+
+    logger.info(`Services updated for organization: ${userId}`);
+    res.status(200).json({ message: "Inventory updated successfully" });
+  } catch (error) {
+    logger.error("Error updating services:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getInventory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const inventory = await organizationService.getOrganizationInventory(
+      userId
+    );
+    res.status(200).json(inventory);
+  } catch (error) {
+    logger.error("Error fetching organization inventory:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.checkOrgAccountType = checkOrgAccountType;

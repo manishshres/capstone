@@ -59,3 +59,29 @@ exports.getOrganizationProfile = async (userId) => {
   }
   return organization.profile;
 };
+
+exports.getOrganizationInventory = async (userId) => {
+  const organization = await getOrganizationDocument(userId);
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+  console.log(organization);
+  return organization.inventory;
+};
+
+exports.updateInventory = async (userId, inventoryData) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+
+  await organizations.updateOne(
+    { userId: userId },
+    {
+      $set: {
+        inventory: inventoryData,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return { success: true };
+};

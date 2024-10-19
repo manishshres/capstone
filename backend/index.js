@@ -6,7 +6,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const authRoutes = require("./routes/authRoutes");
-const protectedRoutes = require("./routes/protectedRoutes");
+const userRoutes = require("./routes/userRoutes");
 const shelterRoutes = require("./routes/shelterRoutes");
 const organizationRoutes = require("./routes/organizationRoutes");
 
@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 
 // Route for related actions
 app.use("/api/auth", authRoutes);
-app.use("/api/protected", protectedRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api", shelterRoutes);
 
