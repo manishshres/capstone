@@ -14,4 +14,8 @@ router.get("/profile", organizationController.getProfile);
 router.post("/services", organizationController.updateServices);
 router.get("/services", organizationController.getServices);
 
+// Inventory routes
+router.post("/inventory", organizationController.updateInventory);
+router.get("/inventory", organizationController.getInventory);
+
 module.exports = router;
