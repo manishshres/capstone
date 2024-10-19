@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
+import Sidebar from "components/Sidebar";
+import { AuthContext } from "../contexts/AuthContext";
 
 import axios from "axios";
 
 const Profile = () => {
+  const { authState } = useContext(AuthContext);
+  const isOrg = authState.user && authState.user.accountType === "org";
+
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -23,23 +28,26 @@ const Profile = () => {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const fetchOrganizationData = async () => {
+    const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:3000/api/organization/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const url = isOrg
+          ? "http://localhost:3000/api/organization/profile"
+          : "http://localhost:3000/api/user/profile";
+        console.log(formData);
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         console.log("Response:", response.data);
         setFormData(response.data);
       } catch (error) {
-        console.error("Error fetching organization data:", error);
+        console.error("Error fetching profile data:", error);
         showToast(
-          "Failed to load organization data. Please try again.",
+          `Failed to load ${
+            isOrg ? "organization" : "user"
+          } data. Please try again.`,
           "error"
         );
       } finally {
@@ -47,8 +55,8 @@ const Profile = () => {
       }
     };
 
-    fetchOrganizationData();
-  }, []);
+    fetchProfileData();
+  }, [isOrg]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,23 +72,19 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://localhost:3000/api/organization/profile",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const url = isOrg
+        ? "http://localhost:3000/api/organization/profile"
+        : "http://localhost:3000/api/user/profile";
+      const response = await axios.put(url, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       console.log("Response:", response.data);
-      showToast("Organization profile updated successfully.", "success");
+      showToast("Profile updated successfully.", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast(
-        "Failed to update organization profile. Please try again.",
-        "error"
-      );
+      showToast("Failed to update profile. Please try again.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -154,21 +158,10 @@ const Profile = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row">
-      <nav className="w-full md:w-48 bg-white shadow-md rounded-md p-4 mb-4 md:mr-4 md:mb-0">
-        <ul className="space-y-2">
-          <li className="bg-blue-100 p-2 rounded">
-            <Link to="/profile">Profile</Link>
-          </li>
-          <li className="p-2">
-            <Link to="/services">Services</Link>
-          </li>
-          <li className="p-2">Inventory</li>
-          <li className="p-2">Hours</li>
-        </ul>
-      </nav>
+      <Sidebar />
       <div className="flex-grow">
         <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-          Organization Profile
+          {isOrg ? "Organization" : "User"} Profile
         </h2>
         <form
           onSubmit={handleSubmit}
@@ -187,32 +180,35 @@ const Profile = () => {
                 id="name"
                 name="name"
                 type="text"
-                placeholder="Organization Name"
+                placeholder="Name"
                 value={formData.name}
                 onChange={handleChange}
                 required
               />
             </div>
-            <div>
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="type"
-              >
-                Type
-              </label>
-              <select
-                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="type"
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                placeholder="Organization Type"
-                required
-              >
-                <option value="shelter">Shelter</option>
-                <option value="food_bank">Food Bank</option>
-              </select>
-            </div>
+            {isOrg ? (
+              <div>
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="type"
+                >
+                  Type
+                </label>
+                <select
+                  className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  placeholder="Organization Type"
+                  required={isOrg}
+                >
+                  <option value="shelter">Shelter</option>
+                  <option value="food_bank">Food Bank</option>
+                </select>
+              </div>
+            ) : null}
+
             <div>
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
@@ -228,7 +224,7 @@ const Profile = () => {
                 placeholder="1234 Main St"
                 value={formData.address}
                 onChange={handleChange}
-                required
+                required={isOrg}
               />
             </div>
             <div>
@@ -263,7 +259,7 @@ const Profile = () => {
                 placeholder="City"
                 value={formData.city}
                 onChange={handleChange}
-                required
+                required={isOrg}
               />
             </div>
             <div>
@@ -279,7 +275,7 @@ const Profile = () => {
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
-                required
+                required={isOrg}
               >
                 <option value="">Choose...</option>
                 {states.map((state) => (
@@ -304,7 +300,7 @@ const Profile = () => {
                 placeholder="Zip Code"
                 value={formData.zip}
                 onChange={handleChange}
-                required
+                required={isOrg}
               />
             </div>
             <div>
@@ -322,43 +318,47 @@ const Profile = () => {
                 placeholder="Phone"
                 value={formData.phone}
                 onChange={handleChange}
-                required
+                required={isOrg}
               />
             </div>
-            <div>
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="latitude"
-              >
-                Latitude
-              </label>
-              <input
-                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="latitude"
-                name="latitude"
-                type="text"
-                placeholder="Latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="longitude"
-              >
-                Longitude
-              </label>
-              <input
-                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="longitude"
-                name="longitude"
-                type="text"
-                placeholder="Longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-              />
-            </div>
+            {isOrg ? (
+              <div>
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="latitude"
+                >
+                  Latitude
+                </label>
+                <input
+                  className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="latitude"
+                  name="latitude"
+                  type="text"
+                  placeholder="Latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                />
+              </div>
+            ) : null}
+            {isOrg ? (
+              <div>
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="longitude"
+                >
+                  Longitude
+                </label>
+                <input
+                  className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="longitude"
+                  name="longitude"
+                  type="text"
+                  placeholder="Longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                />
+              </div>
+            ) : null}
             <div>
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
@@ -374,27 +374,30 @@ const Profile = () => {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled
                 required
               />
             </div>
 
-            <div>
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="website"
-              >
-                Website
-              </label>
-              <input
-                className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="website"
-                name="website"
-                type="url"
-                placeholder="https://example.com"
-                value={formData.website}
-                onChange={handleChange}
-              />
-            </div>
+            {isOrg ? (
+              <div>
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="website"
+                >
+                  Website
+                </label>
+                <input
+                  className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="website"
+                  name="website"
+                  type="url"
+                  placeholder="https://example.com"
+                  value={formData.website}
+                  onChange={handleChange}
+                />
+              </div>
+            ) : null}
           </div>
           <div className="mt-6">
             <button

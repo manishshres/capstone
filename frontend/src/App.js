@@ -9,6 +9,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Dashboard from "./screens/Dashboard";
 import Profile from "./screens/Profile";
 import Services from "./screens/Services";
+import Inventory from "screens/Inventory";
 
 function App() {
   return (
@@ -40,6 +41,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <Services />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/inventory"
+              element={
+                <PrivateRoute>
+                  <Inventory />
                 </PrivateRoute>
               }
             />

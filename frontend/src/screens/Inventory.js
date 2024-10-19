@@ -3,20 +3,20 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "components/Sidebar";
 
-const Services = () => {
+const Inventory = () => {
   const [description, setDescription] = useState("");
-  const [services, setServices] = useState([]);
-  const [newService, setNewService] = useState("");
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState({ name: "", quantity: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchInventory = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:3000/api/organization/services",
+          "http://localhost:3000/api/organization/inventory",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -24,42 +24,43 @@ const Services = () => {
           }
         );
         setDescription(response.data.description || "");
-        setServices(response.data.serviceList || []);
+        setItems(response.data.items || []);
       } catch (error) {
-        console.error("Error fetching services:", error);
-        showToast("Failed to load services. Please try again.", "error");
+        console.error("Error fetching inventory:", error);
+        showToast("Failed to load inventory. Please try again.", "error");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchServices();
+    fetchInventory();
   }, []);
 
   const handleDescriptionChange = (e) => {
     setDescription(e.target.value);
   };
 
-  const handleNewServiceChange = (e) => {
-    setNewService(e.target.value);
+  const handleNewItemChange = (e) => {
+    const { name, value } = e.target;
+    setNewItem((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddService = () => {
-    if (newService.trim()) {
-      setServices([...services, newService.trim()]);
-      setNewService("");
+  const handleAddItem = () => {
+    if (newItem.name && newItem.quantity) {
+      setItems([...items, { ...newItem, quantity: Number(newItem.quantity) }]);
+      setNewItem({ name: "", quantity: 0 });
     }
   };
 
-  const handleEditService = (index, value) => {
-    const updatedServices = [...services];
-    updatedServices[index] = value;
-    setServices(updatedServices);
+  const handleEditItem = (index, field, value) => {
+    const updatedItems = [...items];
+    updatedItems[index][field] = field === "quantity" ? Number(value) : value;
+    setItems(updatedItems);
   };
 
-  const handleDeleteService = (index) => {
-    const updatedServices = services.filter((_, i) => i !== index);
-    setServices(updatedServices);
+  const handleDeleteItem = (index) => {
+    const updatedItems = items.filter((_, i) => i !== index);
+    setItems(updatedItems);
   };
 
   const handleSubmit = async (e) => {
@@ -68,11 +69,11 @@ const Services = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.put(
-        "http://localhost:3000/api/organization/services",
+      await axios.post(
+        "http://localhost:3000/api/organization/inventory",
         {
           description,
-          serviceList: services,
+          items,
         },
         {
           headers: {
@@ -80,10 +81,10 @@ const Services = () => {
           },
         }
       );
-      showToast("Services updated successfully.", "success");
+      showToast("Inventory updated successfully.", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Failed to update services. Please try again.", "error");
+      showToast("Failed to update inventory. Please try again.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -107,7 +108,7 @@ const Services = () => {
       <Sidebar />
       <div className="flex-grow">
         <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-          Services
+          Inventory
         </h2>
         <form
           onSubmit={handleSubmit}
@@ -126,55 +127,63 @@ const Services = () => {
               rows="3"
               value={description}
               onChange={handleDescriptionChange}
-              placeholder="List of services provided by the organization just shelter, food bank, employment."
+              placeholder="Current inventory of essential items"
             />
           </div>
           <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="newService"
-            >
-              Add New Service
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Add New Item
             </label>
-            <div className="flex">
+            <div className="flex space-x-2">
               <input
-                className="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="newService"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 type="text"
-                placeholder="Enter new service"
-                value={newService}
-                onChange={handleNewServiceChange}
+                placeholder="Item name"
+                name="name"
+                value={newItem.name}
+                onChange={handleNewItemChange}
+              />
+              <input
+                className="shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="number"
+                placeholder="Quantity"
+                name="quantity"
+                value={newItem.quantity}
+                onChange={handleNewItemChange}
               />
               <button
                 type="button"
-                onClick={handleAddService}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r"
+                onClick={handleAddItem}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
                 Add
               </button>
             </div>
           </div>
           <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Services List</h3>
-            {services.map((service, index) => (
-              <div key={index} className="flex mb-2">
+            <h3 className="text-lg font-semibold mb-2">Inventory List</h3>
+            {items.map((item, index) => (
+              <div key={index} className="flex space-x-2 mb-2">
                 <input
-                  className="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   type="text"
-                  value={service}
-                  onChange={(e) => handleEditService(index, e.target.value)}
+                  value={item.name}
+                  onChange={(e) =>
+                    handleEditItem(index, "name", e.target.value)
+                  }
+                />
+                <input
+                  className="shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleEditItem(index, "quantity", e.target.value)
+                  }
                 />
                 <button
                   type="button"
-                  onClick={() => handleEditService(index, service)}
-                  className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteService(index)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r"
+                  onClick={() => handleDeleteItem(index)}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                 >
                   Delete
                 </button>
@@ -205,4 +214,4 @@ const Services = () => {
   );
 };
 
-export default Services;
+export default Inventory;

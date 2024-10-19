@@ -7,15 +7,15 @@ const authenticateToken = require("../middlewares/authenticateToken");
 router.use(authenticateToken, organizationController.checkOrgAccountType);
 
 // Profile routes
-router.post("/profile", organizationController.createOrUpdateProfile);
+router.put("/profile", organizationController.createOrUpdateProfile);
 router.get("/profile", organizationController.getProfile);
 
 // Services routes
-router.post("/services", organizationController.updateServices);
+router.put("/services", organizationController.updateServices);
 router.get("/services", organizationController.getServices);
 
 // Inventory routes
-router.post("/inventory", organizationController.updateInventory);
+router.put("/inventory", organizationController.updateInventory);
 router.get("/inventory", organizationController.getInventory);
 
 module.exports = router;

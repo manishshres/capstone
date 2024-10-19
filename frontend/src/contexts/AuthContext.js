@@ -47,7 +47,8 @@ const AuthProvider = ({ children }) => {
       token,
       isAuthenticated: true,
       user: {
-        email: decodedToken.email, // Extract the email from the decoded token
+        email: decodedToken.email,
+        accountType: decodedToken.accountType, // Extract the email from the decoded token
       },
     });
   };
