@@ -15,6 +15,8 @@ exports.updateUserProfile = async (userId, updateData) => {
 
   const result = await users.findOneAndUpdate(
     { _id: userId },
-    { $set: updateData }
+    { $set: updateData },
+    { returnDocument: "after" }
   );
+  return result.value;
 };

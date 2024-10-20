@@ -31,7 +31,7 @@ exports.getOrganizationServices = async (userId) => {
   if (!organization) {
     throw new Error("Organization not found");
   }
-  console.log(organization);
+  // console.log(organization);
   return organization.services;
 };
 
@@ -65,7 +65,7 @@ exports.getOrganizationInventory = async (userId) => {
   if (!organization) {
     throw new Error("Organization not found");
   }
-  console.log(organization);
+  // console.log(organization);
   return organization.inventory;
 };
 

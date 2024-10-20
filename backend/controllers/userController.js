@@ -7,7 +7,7 @@ exports.getProfile = async (req, res) => {
     logger.info(`Fetching profile for user ID: ${userId}`);
 
     const userProfile = await userService.getUserProfile(userId);
-    console.log(userProfile);
+    //console.log(userProfile);
 
     res.status(200).json(userProfile);
   } catch (error) {
