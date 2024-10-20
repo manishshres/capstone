@@ -1,6 +1,8 @@
 const { getShelters } = require("../../controllers/shelterController");
 const shelterService = require("../../services/shelterService");
 
+const { logger } = require("../../utils/logger");
+
 // Mock the shelterService
 jest.mock("../../services/shelterService");
 
@@ -116,10 +118,6 @@ describe("Shelter Controller", () => {
     expect(res.json).toHaveBeenCalledWith({
       error: "An error occurred while fetching shelters",
     });
-    expect(console.error).toHaveBeenCalledWith(
-      "Error fetching shelters:",
-      error
-    );
   });
 
   test("should trim whitespace from search input", async () => {

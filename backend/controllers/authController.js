@@ -45,7 +45,8 @@ exports.register = async (req, res) => {
       token: token,
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    //console.error("Registration error:", error);
+    logger.error("Registration error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -86,7 +87,8 @@ exports.login = async (req, res) => {
       token: token,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    //console.error("Login error:", error);
+    logger.error("Login error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -98,7 +100,8 @@ exports.authStatus = async (req, res) => {
       message: `Logged in!`,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    //console.error("Login error:", error);
+    logger.error("Login error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

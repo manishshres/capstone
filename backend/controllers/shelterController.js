@@ -36,6 +36,7 @@ const getShelters = async (req, res) => {
     }
     // If none of the above, return an error
     else {
+      logger.error("Invalid search format: ", trimmedSearch);
       return res.status(400).json({
         error:
           "Invalid search format. Please use zipcode, lat,lng, or city,state",
@@ -44,7 +45,7 @@ const getShelters = async (req, res) => {
 
     res.json(shelters);
   } catch (error) {
-    logger.error("EError fetching shelters: ", error);
+    logger.error("Error fetching shelters:", error);
     res
       .status(500)
       .json({ error: "An error occurred while fetching shelters" });

@@ -1,172 +1,53 @@
-const userController = require("../../controllers/userController");
-const userService = require("../../services/userService");
-const { logger } = require("../../utils/logger");
+const userService = require("../services/userService");
+const { logger } = require("../utils/logger");
 
-jest.mock("../../services/userService");
-jest.mock("../../utils/logger");
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    logger.info(`Fetching profile for user ID: ${userId}`);
 
-describe("User Controller", () => {
-  let req, res;
+    const userProfile = await userService.getUserProfile(userId);
+    console.log(userProfile);
 
-  beforeEach(() => {
-    req = {
-      user: { userId: "123" },
-      body: {
-        name: "Updated Name",
-        address: "123 Main St",
-        address2: "Apt 4",
-        city: "Anytown",
-        state: "ST",
-        zip: "12345",
-        phone: "123-456-7890",
-      },
-    };
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
-    jest.clearAllMocks();
-  });
+    res.status(200).json(userProfile);
+  } catch (error) {
+    logger.error("Error fetching user profile:", error);
+    if (error.message === "User not found") {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
-  describe("getProfile", () => {
-    it("should fetch user profile successfully", async () => {
-      const mockProfile = {
-        _id: "123",
-        name: "Test User",
-        email: "test@example.com",
-        accountType: "user",
-      };
-      userService.getUserProfile.mockResolvedValue(mockProfile);
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name, address, address2, city, state, zip, phone } = req.body;
+    logger.info(`Updating profile for user ID: ${userId}`);
 
-      await userController.getProfile(req, res);
+    // Only allow updating name and email
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (address) updateData.address = address;
+    if (address2) updateData.address2 = address2;
+    if (city) updateData.city = city;
+    if (state) updateData.state = state;
+    if (zip) updateData.zip = zip;
+    if (phone) updateData.phone = phone;
 
-      expect(userService.getUserProfile).toHaveBeenCalledWith("123");
-      expect(logger.info).toHaveBeenCalledWith(
-        "Fetching profile for user ID: 123"
-      );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockProfile);
-    });
+    updateData.updated_at = new Date().toISOString();
 
-    it("should handle user not found error", async () => {
-      userService.getUserProfile.mockResolvedValue(null);
+    const updatedProfile = await userService.updateUserProfile(
+      userId,
+      updateData
+    );
 
-      await userController.getProfile(req, res);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error fetching user profile:",
-        new Error("User not found")
-      );
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ error: "User not found" });
-    });
-
-    it("should handle internal server error", async () => {
-      userService.getUserProfile.mockRejectedValue(new Error("Database error"));
-
-      await userController.getProfile(req, res);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error fetching user profile:",
-        expect.any(Error)
-      );
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
-    });
-  });
-
-  describe("updateProfile", () => {
-    it("should update user profile successfully", async () => {
-      const mockUpdatedProfile = {
-        _id: "123",
-        name: "Updated Name",
-        address: "123 Main St",
-        address2: "Apt 4",
-        city: "Anytown",
-        state: "ST",
-        zip: "12345",
-        phone: "123-456-7890",
-        updated_at: expect.any(String),
-      };
-      userService.updateUserProfile.mockResolvedValue(mockUpdatedProfile);
-
-      await userController.updateProfile(req, res);
-
-      expect(userService.updateUserProfile).toHaveBeenCalledWith(
-        "123",
-        expect.objectContaining({
-          name: "Updated Name",
-          address: "123 Main St",
-          address2: "Apt 4",
-          city: "Anytown",
-          state: "ST",
-          zip: "12345",
-          phone: "123-456-7890",
-          updated_at: expect.any(String),
-        })
-      );
-      expect(logger.info).toHaveBeenCalledWith(
-        "Updating profile for user ID: 123"
-      );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        updatedProfile: mockUpdatedProfile,
-      });
-    });
-
-    it("should handle user not found or update failed error", async () => {
-      userService.updateUserProfile.mockResolvedValue(null);
-
-      await userController.updateProfile(req, res);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error updating user profile:",
-        new Error("User not found or update failed")
-      );
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "User not found or update failed",
-      });
-    });
-
-    it("should handle internal server error", async () => {
-      userService.updateUserProfile.mockRejectedValue(
-        new Error("Database error")
-      );
-
-      await userController.updateProfile(req, res);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error updating user profile:",
-        expect.any(Error)
-      );
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
-    });
-
-    it("should only update allowed fields", async () => {
-      req.body.email = "newemail@example.com"; // This should not be updated
-      const mockUpdatedProfile = {
-        _id: "123",
-        name: "Updated Name",
-        address: "123 Main St",
-        address2: "Apt 4",
-        city: "Anytown",
-        state: "ST",
-        zip: "12345",
-        phone: "123-456-7890",
-        updated_at: expect.any(String),
-      };
-      userService.updateUserProfile.mockResolvedValue(mockUpdatedProfile);
-
-      await userController.updateProfile(req, res);
-
-      expect(userService.updateUserProfile).toHaveBeenCalledWith(
-        "123",
-        expect.not.objectContaining({
-          email: "newemail@example.com",
-        })
-      );
-    });
-  });
-});
+    res.status(200).json({ updatedProfile });
+  } catch (error) {
+    logger.error("Error updating user profile:", error);
+    if (error.message === "User not found or update failed") {
+      return res.status(404).json({ error: "User not found or update failed" });
+    }
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

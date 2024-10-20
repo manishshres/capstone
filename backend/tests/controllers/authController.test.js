@@ -1,6 +1,7 @@
 const authController = require("../../controllers/authController");
 const authService = require("../../services/authService");
 const jwt = require("jsonwebtoken");
+const { logger } = require("../../utils/logger");
 
 jest.mock("../../services/authService");
 jest.mock("jsonwebtoken");
@@ -46,7 +47,12 @@ describe("Auth Controller", () => {
         "user"
       );
       expect(jwt.sign).toHaveBeenCalledWith(
-        expect.objectContaining(mockUser),
+        {
+          userId: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.name,
+          accountType: mockUser.accountType,
+        },
         process.env.SUPABASE_JWT_SECRET,
         { expiresIn: "1h" }
       );
@@ -108,11 +114,11 @@ describe("Auth Controller", () => {
         "password123"
       );
       expect(jwt.sign).toHaveBeenCalledWith(
-        expect.objectContaining({
+        {
           userId: mockUser.id,
           email: mockUser.email,
           accountType: mockUser.accountType,
-        }),
+        },
         process.env.SUPABASE_JWT_SECRET,
         { expiresIn: "1h" }
       );
@@ -157,12 +163,14 @@ describe("Auth Controller", () => {
     });
 
     it("should handle unexpected errors", async () => {
-      res.status.mockImplementation(() => {
-        throw new Error("Unexpected error");
+      const error = new Error("Unexpected error");
+      res.status.mockImplementationOnce(() => {
+        throw error;
       });
 
       await authController.authStatus(req, res);
 
+      expect(logger.error).toHaveBeenCalledWith("Login error:", error);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
     });
