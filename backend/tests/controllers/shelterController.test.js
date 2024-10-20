@@ -5,6 +5,12 @@ const { logger } = require("../../utils/logger");
 
 // Mock the shelterService
 jest.mock("../../services/shelterService");
+jest.mock("../../utils/logger", () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 
 describe("Shelter Controller", () => {
   let req, res;

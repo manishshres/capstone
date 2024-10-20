@@ -84,7 +84,7 @@ exports.login = async (email, password) => {
       //throw new Error("User data not found in MongoDB");
       return { error: "User data not found in MongoDB" };
     }
-    console.log(userData);
+    //console.log(userData);
 
     return {
       user: {
