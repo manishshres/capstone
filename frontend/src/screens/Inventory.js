@@ -69,7 +69,7 @@ const Inventory = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
+      await axios.put(
         "http://localhost:3000/api/organization/inventory",
         {
           description,
