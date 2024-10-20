@@ -3,7 +3,7 @@ const { logger } = require("../utils/logger");
 
 const checkOrgAccountType = (req, res, next) => {
   if (req.user.accountType !== "org") {
-    console.log(req.user);
+    // console.log(req.user);
     return res
       .status(403)
       .json({ error: "Only organization accounts can access this resource" });

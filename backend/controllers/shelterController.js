@@ -1,4 +1,5 @@
 const shelterService = require("../services/shelterService");
+const { logger } = require("../utils/logger");
 
 const getShelters = async (req, res) => {
   try {
@@ -43,7 +44,7 @@ const getShelters = async (req, res) => {
 
     res.json(shelters);
   } catch (error) {
-    console.error("Error fetching shelters:", error);
+    logger.error("EError fetching shelters: ", error);
     res
       .status(500)
       .json({ error: "An error occurred while fetching shelters" });
