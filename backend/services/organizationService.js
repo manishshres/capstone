@@ -85,3 +85,68 @@ exports.updateInventory = async (userId, inventoryData) => {
 
   return { success: true };
 };
+
+exports.createServiceRequest = async (userId, organizationId, requestData) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const newRequest = {
+    userId,
+    organizationId,
+    ...requestData,
+    status: "pending",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const result = await serviceRequests.insertOne(newRequest);
+  return { success: true, requestId: result.insertedId };
+};
+
+exports.getServiceRequests = async (organizationId, status = null) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const query = { organizationId };
+  if (status) {
+    query.status = status;
+  }
+
+  return await serviceRequests.find(query).sort({ createdAt: -1 }).toArray();
+};
+
+exports.getServiceRequestById = async (organizationId, requestId) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  return await serviceRequests.findOne({
+    organizationId,
+    _id: requestId,
+  });
+};
+
+exports.updateServiceRequestStatus = async (
+  organizationId,
+  requestId,
+  status,
+  notes
+) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const result = await serviceRequests.updateOne(
+    {
+      organizationId,
+      _id: requestId,
+    },
+    {
+      $set: {
+        status,
+        notes,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return result.modifiedCount > 0;
+};
