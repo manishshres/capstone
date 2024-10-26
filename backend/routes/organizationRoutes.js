@@ -18,7 +18,8 @@ router.get("/services", organizationController.getServices);
 router.put("/inventory", organizationController.updateInventory);
 router.get("/inventory", organizationController.getInventory);
 
-router.use("/requests", organizationController.checkOrgAccountType);
+router.post("/request", organizationController.createServiceRequest);
+
 router.get("/requests", organizationController.getServiceRequests);
 router.get(
   "/requests/:requestId",

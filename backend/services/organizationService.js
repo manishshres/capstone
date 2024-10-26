@@ -87,20 +87,50 @@ exports.updateInventory = async (userId, inventoryData) => {
 };
 
 exports.createServiceRequest = async (userId, organizationId, requestData) => {
-  const db = await connectToDatabase();
-  const serviceRequests = db.collection("serviceRequests");
+  try {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+    const serviceRequests = db.collection("serviceRequests");
 
-  const newRequest = {
-    userId,
-    organizationId,
-    ...requestData,
-    status: "pending",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+    // Verify organization exists
+    const organization = await organizations.findOne({
+      userId: organizationId,
+    });
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
 
-  const result = await serviceRequests.insertOne(newRequest);
-  return { success: true, requestId: result.insertedId };
+    // Verify service exists in organization's services
+    const serviceExists = organization.services?.serviceList?.some(
+      (service) => service.id === requestData.serviceId
+    );
+    if (!serviceExists) {
+      throw new Error("Service not found");
+    }
+
+    const newRequest = {
+      userId,
+      organizationId,
+      ...requestData,
+      responseData: null,
+      history: [
+        {
+          status: "pending",
+          timestamp: new Date(),
+          note: "Request created",
+        },
+      ],
+    };
+
+    const result = await serviceRequests.insertOne(newRequest);
+    return {
+      success: true,
+      requestId: result.insertedId,
+    };
+  } catch (error) {
+    console.error("Error in createServiceRequest:", error);
+    throw error;
+  }
 };
 
 exports.getServiceRequests = async (organizationId, status = null) => {

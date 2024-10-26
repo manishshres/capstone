@@ -101,6 +101,83 @@ exports.getInventory = async (req, res) => {
   }
 };
 
+exports.createServiceRequest = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const {
+      organizationId,
+      serviceId,
+      serviceName,
+      description,
+      preferredContact,
+      contactDetails,
+    } = req.body;
+
+    // Validate required fields
+    if (!organizationId || !serviceId || !description || !preferredContact) {
+      return res.status(400).json({
+        error:
+          "Missing required fields. Please provide organizationId, serviceId, description, and preferredContact.",
+      });
+    }
+
+    // Validate preferredContact
+    if (!["email", "phone"].includes(preferredContact)) {
+      return res.status(400).json({
+        error:
+          "Invalid preferredContact value. Must be either 'email' or 'phone'.",
+      });
+    }
+
+    // Validate contactDetails based on preferredContact
+    if (preferredContact === "email" && !contactDetails?.email) {
+      return res.status(400).json({ error: "Email contact details required" });
+    }
+    if (preferredContact === "phone" && !contactDetails?.phone) {
+      return res.status(400).json({ error: "Phone contact details required" });
+    }
+
+    const requestData = {
+      serviceId,
+      serviceName,
+      description,
+      preferredContact,
+      contactDetails,
+      status: "pending",
+      notes: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await organizationService.createServiceRequest(
+      userId,
+      organizationId,
+      requestData
+    );
+
+    logger.info(
+      `Service request created for organization ${organizationId} by user ${userId}`
+    );
+    res.status(201).json({
+      message: "Service request created successfully",
+      requestId: result.requestId,
+      status: "pending",
+    });
+  } catch (error) {
+    logger.error("Error creating service request:", error);
+
+    if (error.message === "Organization not found") {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    if (error.message === "Service not found") {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.status(500).json({ error: "Failed to create service request" });
+  }
+};
+
 exports.getServiceRequests = async (req, res) => {
   try {
     const userId = req.user.userId;
