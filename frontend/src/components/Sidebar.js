@@ -17,6 +17,16 @@ const Sidebar = () => {
         >
           <NavLink to="/profile">Profile</NavLink>
         </li>
+
+        {!isOrg && (
+          <li
+            className={`p-2 rounded ${
+              isActive("/request-services") ? "bg-blue-100" : ""
+            }`}
+          >
+            <NavLink to="/request-services">Request Services</NavLink>
+          </li>
+        )}
         {isOrg && (
           <>
             <li

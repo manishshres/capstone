@@ -10,6 +10,7 @@ import Dashboard from "./screens/Dashboard";
 import Profile from "./screens/Profile";
 import Services from "./screens/Services";
 import Inventory from "screens/Inventory";
+import RequestServices from "screens/RequestServices";
 
 function App() {
   return (
@@ -41,6 +42,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <Services />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/request-services"
+              element={
+                <PrivateRoute>
+                  <RequestServices />
                 </PrivateRoute>
               }
             />
