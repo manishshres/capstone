@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "components/Sidebar";
+import { toast } from "react-toastify";
+import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 
 const Services = () => {
   const [description, setDescription] = useState("");
@@ -9,7 +9,6 @@ const Services = () => {
   const [newService, setNewService] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -27,7 +26,7 @@ const Services = () => {
         setServices(response.data.serviceList || []);
       } catch (error) {
         console.error("Error fetching services:", error);
-        showToast("Failed to load services. Please try again.", "error");
+        toast.error("Failed to load services. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -35,14 +34,6 @@ const Services = () => {
 
     fetchServices();
   }, []);
-
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value);
-  };
-
-  const handleNewServiceChange = (e) => {
-    setNewService(e.target.value);
-  };
 
   const handleAddService = () => {
     if (newService.trim()) {
@@ -80,127 +71,123 @@ const Services = () => {
           },
         }
       );
-      showToast("Services updated successfully.", "success");
+      toast.success("Services updated successfully.");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Failed to update services. Please try again.", "error");
+      toast.error("Failed to update services. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
+      <div className="flex justify-center items-center h-[calc(100vh-16rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row">
-      <Sidebar />
-      <div className="flex-grow">
-        <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-          Services
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-md rounded-md px-8 pt-6 pb-8 mb-4"
-        >
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="description"
-            >
-              Description
-            </label>
-            <textarea
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="description"
-              rows="3"
-              value={description}
-              onChange={handleDescriptionChange}
-              placeholder="List of services provided by the organization just shelter, food bank, employment."
-            />
-          </div>
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="newService"
-            >
-              Add New Service
-            </label>
-            <div className="flex">
-              <input
-                className="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="newService"
-                type="text"
-                placeholder="Enter new service"
-                value={newService}
-                onChange={handleNewServiceChange}
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Services Management
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Manage the services your organization provides
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows="3"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="List of services provided by the organization"
               />
-              <button
-                type="button"
-                onClick={handleAddService}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r"
-              >
-                Add
-              </button>
             </div>
-          </div>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Services List</h3>
-            {services.map((service, index) => (
-              <div key={index} className="flex mb-2">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add New Service
+              </label>
+              <div className="flex gap-2">
                 <input
-                  className="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   type="text"
-                  value={service}
-                  onChange={(e) => handleEditService(index, e.target.value)}
+                  placeholder="Enter new service"
+                  value={newService}
+                  onChange={(e) => setNewService(e.target.value)}
                 />
                 <button
                   type="button"
-                  onClick={() => handleEditService(index, service)}
-                  className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4"
+                  onClick={handleAddService}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteService(index)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r"
-                >
-                  Delete
+                  <Plus className="h-5 w-5" />
                 </button>
               </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between">
-            <button
-              className="w-full py-2 px-4 bg-glaucous text-white font-semibold rounded-md shadow-md hover:bg-glaucous/90 focus:outline-none focus:ring-2 focus:ring-glaucous focus:ring-offset-2 transition duration-150 ease-in-out"
-              type="submit"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
+                Services List
+              </h3>
+              <div className="space-y-2">
+                {services.map((service, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      type="text"
+                      value={service}
+                      onChange={(e) => handleEditService(index, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleEditService(index, service)}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                    >
+                      <Pencil className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteService(index)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                    Saving Changes...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
-        >
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 };

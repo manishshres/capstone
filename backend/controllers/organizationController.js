@@ -1,7 +1,7 @@
 const organizationService = require("../services/organizationService");
 const { logger } = require("../utils/logger");
 
-const checkOrgAccountType = (req, res, next) => {
+exports.checkOrgAccountType = (req, res, next) => {
   if (req.user.accountType !== "org") {
     // console.log(req.user);
     return res
@@ -101,4 +101,198 @@ exports.getInventory = async (req, res) => {
   }
 };
 
-exports.checkOrgAccountType = checkOrgAccountType;
+exports.createServiceRequest = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const {
+      organizationId,
+      serviceId,
+      serviceName,
+      description,
+      preferredContact,
+      contactDetails,
+    } = req.body;
+
+    // Validate required fields
+    if (!organizationId || !serviceId || !description || !preferredContact) {
+      return res.status(400).json({
+        error:
+          "Missing required fields. Please provide organizationId, serviceId, description, and preferredContact.",
+      });
+    }
+
+    // Validate preferredContact
+    if (!["email", "phone"].includes(preferredContact)) {
+      return res.status(400).json({
+        error:
+          "Invalid preferredContact value. Must be either 'email' or 'phone'.",
+      });
+    }
+
+    // Validate contactDetails based on preferredContact
+    if (preferredContact === "email" && !contactDetails?.email) {
+      return res.status(400).json({ error: "Email contact details required" });
+    }
+    if (preferredContact === "phone" && !contactDetails?.phone) {
+      return res.status(400).json({ error: "Phone contact details required" });
+    }
+
+    const requestData = {
+      serviceId,
+      serviceName,
+      description,
+      preferredContact,
+      contactDetails,
+      status: "pending",
+      notes: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await organizationService.createServiceRequest(
+      userId,
+      organizationId,
+      requestData
+    );
+
+    logger.info(
+      `Service request created for organization ${organizationId} by user ${userId}`
+    );
+    res.status(201).json({
+      message: "Service request created successfully",
+      requestId: result.requestId,
+      status: "pending",
+    });
+  } catch (error) {
+    logger.error("Error creating service request:", error);
+
+    if (error.message === "Organization not found") {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    if (error.message === "Service not found") {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.status(500).json({ error: "Failed to create service request" });
+  }
+};
+
+exports.getServiceRequests = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const status = req.query.status; // Optional status filter
+
+    const requests = await organizationService.getServiceRequests(
+      userId,
+      status
+    );
+    res.status(200).json(requests);
+  } catch (error) {
+    logger.error("Error fetching service requests:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getServiceRequestById = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const requestId = req.params.requestId;
+
+    const request = await organizationService.getServiceRequestById(
+      userId,
+      requestId
+    );
+
+    if (!request) {
+      return res.status(404).json({ error: "Service request not found" });
+    }
+
+    res.status(200).json(request);
+  } catch (error) {
+    logger.error("Error fetching service request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.updateServiceRequestStatus = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { requestId } = req.params;
+    const { status, notes } = req.body;
+
+    if (!["approved", "rejected", "completed", "cancelled"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const result = await organizationService.updateServiceRequestStatus(
+      userId,
+      requestId,
+      status,
+      notes
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: "Service request not found" });
+    }
+
+    logger.info(`Service request ${requestId} status updated to ${status}`);
+    res.status(200).json({
+      message: "Service request status updated successfully",
+      status,
+    });
+  } catch (error) {
+    logger.error("Error updating service request status:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Respond to service request
+exports.respondToServiceRequest = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { requestId } = req.params;
+    const { response, availabilityDate, additionalInfo } = req.body;
+
+    const result = await organizationService.respondToServiceRequest(
+      userId,
+      requestId,
+      {
+        response,
+        availabilityDate,
+        additionalInfo,
+        respondedAt: new Date(),
+      }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: "Service request not found" });
+    }
+
+    logger.info(`Response added to service request ${requestId}`);
+    res.status(200).json({
+      message: "Response added successfully",
+    });
+  } catch (error) {
+    logger.error("Error responding to service request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getServiceRequestStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { startDate, endDate } = req.query;
+
+    const stats = await organizationService.getServiceRequestStats(
+      userId,
+      startDate,
+      endDate
+    );
+
+    res.status(200).json(stats);
+  } catch (error) {
+    logger.error("Error fetching service request statistics:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

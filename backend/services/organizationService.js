@@ -85,3 +85,98 @@ exports.updateInventory = async (userId, inventoryData) => {
 
   return { success: true };
 };
+
+exports.createServiceRequest = async (userId, organizationId, requestData) => {
+  try {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+    const serviceRequests = db.collection("serviceRequests");
+
+    // Verify organization exists
+    const organization = await organizations.findOne({
+      userId: organizationId,
+    });
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    // Verify service exists in organization's services
+    const serviceExists = organization.services?.serviceList?.some(
+      (service) => service.id === requestData.serviceId
+    );
+    if (!serviceExists) {
+      throw new Error("Service not found");
+    }
+
+    const newRequest = {
+      userId,
+      organizationId,
+      ...requestData,
+      responseData: null,
+      history: [
+        {
+          status: "pending",
+          timestamp: new Date(),
+          note: "Request created",
+        },
+      ],
+    };
+
+    const result = await serviceRequests.insertOne(newRequest);
+    return {
+      success: true,
+      requestId: result.insertedId,
+    };
+  } catch (error) {
+    console.error("Error in createServiceRequest:", error);
+    throw error;
+  }
+};
+
+exports.getServiceRequests = async (organizationId, status = null) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const query = { organizationId };
+  if (status) {
+    query.status = status;
+  }
+
+  return await serviceRequests.find(query).sort({ createdAt: -1 }).toArray();
+};
+
+exports.getServiceRequestById = async (organizationId, requestId) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  return await serviceRequests.findOne({
+    organizationId,
+    _id: requestId,
+  });
+};
+
+exports.updateServiceRequestStatus = async (
+  organizationId,
+  requestId,
+  status,
+  notes
+) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const result = await serviceRequests.updateOne(
+    {
+      organizationId,
+      _id: requestId,
+    },
+    {
+      $set: {
+        status,
+        notes,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return result.modifiedCount > 0;
+};

@@ -18,4 +18,16 @@ router.get("/services", organizationController.getServices);
 router.put("/inventory", organizationController.updateInventory);
 router.get("/inventory", organizationController.getInventory);
 
+router.post("/request", organizationController.createServiceRequest);
+
+router.get("/requests", organizationController.getServiceRequests);
+router.get(
+  "/requests/:requestId",
+  organizationController.getServiceRequestById
+);
+router.patch(
+  "/requests/:requestId/status",
+  organizationController.updateServiceRequestStatus
+);
+
 module.exports = router;
