@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "components/Sidebar";
+import { toast } from "react-toastify";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 const Inventory = () => {
   const [description, setDescription] = useState("");
@@ -9,7 +9,6 @@ const Inventory = () => {
   const [newItem, setNewItem] = useState({ name: "", quantity: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -27,7 +26,7 @@ const Inventory = () => {
         setItems(response.data.items || []);
       } catch (error) {
         console.error("Error fetching inventory:", error);
-        showToast("Failed to load inventory. Please try again.", "error");
+        toast.error("Failed to load inventory. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -35,10 +34,6 @@ const Inventory = () => {
 
     fetchInventory();
   }, []);
-
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value);
-  };
 
   const handleNewItemChange = (e) => {
     const { name, value } = e.target;
@@ -81,135 +76,135 @@ const Inventory = () => {
           },
         }
       );
-      showToast("Inventory updated successfully.", "success");
+      toast.success("Inventory updated successfully.");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Failed to update inventory. Please try again.", "error");
+      toast.error("Failed to update inventory. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
+      <div className="flex justify-center items-center h-[calc(100vh-16rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row">
-      <Sidebar />
-      <div className="flex-grow">
-        <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-          Inventory
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-md rounded-md px-8 pt-6 pb-8 mb-4"
-        >
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="description"
-            >
-              Description
-            </label>
-            <textarea
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="description"
-              rows="3"
-              value={description}
-              onChange={handleDescriptionChange}
-              placeholder="Current inventory of essential items"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Add New Item
-            </label>
-            <div className="flex space-x-2">
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                type="text"
-                placeholder="Item name"
-                name="name"
-                value={newItem.name}
-                onChange={handleNewItemChange}
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Inventory Management
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Manage your organization's inventory items and quantities
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows="3"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Current inventory of essential items"
               />
-              <input
-                className="shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                type="number"
-                placeholder="Quantity"
-                name="quantity"
-                value={newItem.quantity}
-                onChange={handleNewItemChange}
-              />
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Add
-              </button>
             </div>
-          </div>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Inventory List</h3>
-            {items.map((item, index) => (
-              <div key={index} className="flex space-x-2 mb-2">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add New Item
+              </label>
+              <div className="flex gap-2">
                 <input
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   type="text"
-                  value={item.name}
-                  onChange={(e) =>
-                    handleEditItem(index, "name", e.target.value)
-                  }
+                  placeholder="Item name"
+                  name="name"
+                  value={newItem.name}
+                  onChange={handleNewItemChange}
                 />
                 <input
-                  className="shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   type="number"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    handleEditItem(index, "quantity", e.target.value)
-                  }
+                  placeholder="Qty"
+                  name="quantity"
+                  value={newItem.quantity}
+                  onChange={handleNewItemChange}
                 />
                 <button
                   type="button"
-                  onClick={() => handleDeleteItem(index)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleAddItem}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                  Delete
+                  <Plus className="h-5 w-5" />
                 </button>
               </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between">
-            <button
-              className="w-full py-2 px-4 bg-glaucous text-white font-semibold rounded-md shadow-md hover:bg-glaucous/90 focus:outline-none focus:ring-2 focus:ring-glaucous focus:ring-offset-2 transition duration-150 ease-in-out"
-              type="submit"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
+                Inventory Items
+              </h3>
+              <div className="space-y-2">
+                {items.map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      type="text"
+                      value={item.name}
+                      onChange={(e) =>
+                        handleEditItem(index, "name", e.target.value)
+                      }
+                    />
+                    <input
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        handleEditItem(index, "quantity", e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem(index)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                    Saving Changes...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
-        >
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 };

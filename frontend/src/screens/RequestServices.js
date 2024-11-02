@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "components/Sidebar";
+import { toast } from "react-toastify";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 const RequestServices = () => {
-  const [description, setDescription] = useState("");
   const [services, setServices] = useState([]);
-  const [newService, setNewService] = useState("");
+  const [selectedServices, setSelectedServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -23,11 +21,10 @@ const RequestServices = () => {
             },
           }
         );
-        setDescription(response.data.description || "");
         setServices(response.data.serviceList || []);
       } catch (error) {
         console.error("Error fetching services:", error);
-        showToast("Failed to load services. Please try again.", "error");
+        toast.error("Failed to load available services. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -36,30 +33,13 @@ const RequestServices = () => {
     fetchServices();
   }, []);
 
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value);
-  };
-
-  const handleNewServiceChange = (e) => {
-    setNewService(e.target.value);
-  };
-
-  const handleAddService = () => {
-    if (newService.trim()) {
-      setServices([...services, newService.trim()]);
-      setNewService("");
-    }
-  };
-
-  const handleEditService = (index, value) => {
-    const updatedServices = [...services];
-    updatedServices[index] = value;
-    setServices(updatedServices);
-  };
-
-  const handleDeleteService = (index) => {
-    const updatedServices = services.filter((_, i) => i !== index);
-    setServices(updatedServices);
+  const handleServiceToggle = (service) => {
+    setSelectedServices((prev) => {
+      if (prev.includes(service)) {
+        return prev.filter((s) => s !== service);
+      }
+      return [...prev, service];
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -68,11 +48,10 @@ const RequestServices = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.put(
-        "http://localhost:3000/api/organization/requests",
+      await axios.post(
+        "http://localhost:3000/api/user/service-requests",
         {
-          description,
-          serviceList: services,
+          services: selectedServices,
         },
         {
           headers: {
@@ -80,86 +59,89 @@ const RequestServices = () => {
           },
         }
       );
-      showToast("Services updated successfully.", "success");
+      toast.success("Service requests submitted successfully.");
+      setSelectedServices([]); // Reset selection after successful submission
     } catch (error) {
       console.error("Error:", error);
-      showToast("Failed to update services. Please try again.", "error");
+      toast.error("Failed to submit service requests. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
+      <div className="flex justify-center items-center h-[calc(100vh-16rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row">
-      <Sidebar />
-      <div className="flex-grow">
-        <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-          Request Services
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-md rounded-md px-8 pt-6 pb-8 mb-4"
-        >
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Availiable Services</h3>
-            {services.map((service, index) => (
-              <div key={index} className="flex mb-2">
-                <input
-                  className="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  type="text"
-                  value={service}
-                  onChange={(e) => handleEditService(index, e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleEditService(index, service)}
-                  className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4"
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Request Services
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Select the services you would like to request
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {services.map((service, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleServiceToggle(service)}
+                  className={`
+                    p-4 border rounded-lg cursor-pointer transition-all
+                    ${
+                      selectedServices.includes(service)
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300"
+                    }
+                  `}
                 >
-                  Edit
-                </button>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">{service}</span>
+                    {selectedServices.includes(service) && (
+                      <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {services.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No services are currently available.
+              </div>
+            )}
+
+            {services.length > 0 && (
+              <div className="pt-4">
                 <button
-                  type="button"
-                  onClick={() => handleDeleteService(index)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r"
+                  type="submit"
+                  disabled={isSaving || selectedServices.length === 0}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  Delete
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                      Submitting Request...
+                    </>
+                  ) : (
+                    "Submit Request"
+                  )}
                 </button>
               </div>
-            ))}
+            )}
           </div>
-          {/* <div className="flex items-center justify-between">
-            <button
-              className="w-full py-2 px-4 bg-glaucous text-white font-semibold rounded-md shadow-md hover:bg-glaucous/90 focus:outline-none focus:ring-2 focus:ring-glaucous focus:ring-offset-2 transition duration-150 ease-in-out"
-              type="submit"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </button>
-          </div> */}
         </form>
       </div>
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
-        >
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 };
