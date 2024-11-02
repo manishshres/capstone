@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import {
@@ -9,12 +9,17 @@ import {
   Settings,
   LogOut,
   Home,
+  ChevronDown,
+  FileText,
+  PlusCircle,
+  ListChecks,
 } from "lucide-react";
 
 const Sidebar = () => {
   const location = useLocation();
   const { authState, logout } = useContext(AuthContext);
   const isOrg = authState.user && authState.user.accountType === "org";
+  const [isRequestsOpen, setIsRequestsOpen] = useState(true);
 
   const menuItems = [
     {
@@ -28,12 +33,6 @@ const Sidebar = () => {
       path: "/profile",
       icon: UserCircle,
       show: true,
-    },
-    {
-      name: "Request Services",
-      path: "/request-services",
-      icon: HandHelping,
-      show: !isOrg,
     },
     {
       name: "Services",
@@ -51,6 +50,27 @@ const Sidebar = () => {
       name: "Hours",
       path: "/hours",
       icon: Clock,
+      show: isOrg,
+    },
+  ];
+
+  const requestMenuItems = [
+    {
+      name: "New Request",
+      path: "/request-services/new",
+      icon: PlusCircle,
+      show: !isOrg,
+    },
+    {
+      name: "My Requests",
+      path: "/request-services",
+      icon: ListChecks,
+      show: !isOrg,
+    },
+    {
+      name: "Service Requests",
+      path: "/service-requests",
+      icon: FileText,
       show: isOrg,
     },
   ];
@@ -86,6 +106,48 @@ const Sidebar = () => {
               </NavLink>
             )
         )}
+
+        {/* Requests Dropdown */}
+        <div className="mt-2">
+          <button
+            onClick={() => setIsRequestsOpen(!isRequestsOpen)}
+            className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
+          >
+            <HandHelping className="mr-3 h-5 w-5" />
+            <span>Requests</span>
+            <ChevronDown
+              className={`ml-auto h-4 w-4 transform transition-transform ${
+                isRequestsOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {isRequestsOpen && (
+            <div className="ml-4 mt-1 space-y-1">
+              {requestMenuItems.map(
+                (item) =>
+                  item.show && (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      className={({ isActive }) => `
+                      flex items-center px-4 py-2 text-sm font-medium rounded-md
+                      ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }
+                      transition-colors duration-150 ease-in-out
+                    `}
+                    >
+                      <item.icon className="mr-3 h-5 w-5" />
+                      {item.name}
+                    </NavLink>
+                  )
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="p-4 border-t border-gray-200">
