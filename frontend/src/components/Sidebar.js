@@ -21,8 +21,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { authState, logout } = useContext(AuthContext);
   const isOrg = authState.user && authState.user.accountType === "org";
-  const isVolunteer =
-    authState.user && authState.user.accountType === "volunteer";
+  const isVolunteer = authState.user && authState.user.accountType === "org";
 
   const baseMenuItems = [
     {
@@ -94,13 +93,13 @@ const Sidebar = () => {
   const orgVolunteerSection = [
     {
       name: "Volunteer Posts",
-      path: "/organization/volunteer-jobs",
+      path: "/volunteer/volunteer-jobs",
       icon: Briefcase,
       show: isOrg,
     },
     {
       name: "Post New Job",
-      path: "/organization/volunteer-jobs/create",
+      path: "/volunteer-jobs/create",
       icon: PlusCircle,
       show: isOrg,
     },
@@ -112,7 +111,7 @@ const Sidebar = () => {
     },
     {
       name: "Volunteers",
-      path: "/organization/volunteers",
+      path: "/volunteers",
       icon: Users,
       show: isOrg,
     },

@@ -1,511 +1,257 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
+  Search,
+  Filter,
+  MapPin,
   Calendar,
   Clock,
-  MapPin,
   Users,
-  Loader2,
-  Plus,
-  X,
   Building2,
+  Loader2,
 } from "lucide-react";
 
-const SKILL_OPTIONS = [
-  "Communication",
-  "Leadership",
-  "Organization",
-  "Customer Service",
-  "Time Management",
-  "Problem Solving",
-  "Teamwork",
-  "Computer Skills",
-  "First Aid",
-  "Teaching",
-  "Administrative",
-  "Event Planning",
-  "Social Media",
-  "Foreign Language",
-  "Cooking",
-  "Driving",
-];
+// Import the mock data
+const MOCK_VOLUNTEER_JOB = {
+  id: "vj1",
+  title: "Community Food Bank Assistant",
+  description:
+    "Join our team of dedicated volunteers helping to sort and distribute food to families in need. Your work will directly impact food security in our community.",
+  type: "recurring",
+  date: "2024-12-15",
+  startTime: "09:00",
+  endTime: "13:00",
+  location: "Springfield Community Food Bank",
+  address: "123 Main Street",
+  city: "Springfield",
+  state: "IL",
+  zipCode: "62701",
+  spots: 10,
+  requirements: `- Must be 18 or older
+- Able to lift 25 pounds
+- Food handling certification preferred
+- Reliable transportation
+- Commitment to food safety protocols`,
+  benefits: `- Hands-on experience in food bank operations
+- Volunteer certification provided
+- Free lunch during shifts
+- Letter of recommendation available
+- Flexible scheduling options`,
+  skills: [
+    "Organization",
+    "Teamwork",
+    "Communication",
+    "Physical Stamina",
+    "Time Management",
+    "Food Safety",
+    "Inventory Management",
+  ],
+  status: "active",
+  schedule: {
+    frequency: "weekly",
+    days: ["Monday", "Wednesday"],
+    duration: "3 months",
+  },
+  organization: {
+    name: "Springfield Food Bank",
+    logo: "/placeholder-logo.png",
+  },
+};
 
-const CreateVolunteerJob = () => {
+// Create an array of mock jobs
+const MOCK_JOBS = [MOCK_VOLUNTEER_JOB];
+
+const VolunteerJobs = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [newSkill, setNewSkill] = useState("");
-
-  const [jobData, setJobData] = useState({
-    title: "",
-    description: "",
-    type: "oneTime",
-    date: "",
-    startTime: "",
-    endTime: "",
+  const [jobs, setJobs] = useState(MOCK_JOBS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [filters, setFilters] = useState({
+    search: "",
+    type: "",
     location: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    spots: "",
-    requirements: "",
-    benefits: "",
-    skills: [],
+    date: "",
   });
 
-  const [errors, setErrors] = useState({});
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!jobData.title.trim()) newErrors.title = "Title is required";
-    if (!jobData.description.trim())
-      newErrors.description = "Description is required";
-    if (!jobData.date) newErrors.date = "Date is required";
-    if (!jobData.startTime) newErrors.startTime = "Start time is required";
-    if (!jobData.endTime) newErrors.endTime = "End time is required";
-    if (!jobData.location.trim()) newErrors.location = "Location is required";
-    if (!jobData.spots) newErrors.spots = "Number of spots is required";
-    if (parseInt(jobData.spots) < 1)
-      newErrors.spots = "Must have at least 1 spot";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-      const formData = {
-        ...jobData,
-        skills: selectedSkills,
-      };
-
-      await axios.post(
-        "http://localhost:3000/api/organization/volunteer-jobs",
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("Volunteer opportunity posted successfully");
-      navigate("/organization/volunteer-jobs");
-    } catch (error) {
-      console.error("Error posting job:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to post volunteer opportunity"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    // In a real app, you would fetch filtered data from the API
+    console.log("Searching with filters:", filters);
   };
 
-  const handleSkillSelect = (skill) => {
-    if (!selectedSkills.includes(skill)) {
-      setSelectedSkills([...selectedSkills, skill]);
-    }
-    setNewSkill("");
-  };
-
-  const handleRemoveSkill = (skillToRemove) => {
-    setSelectedSkills(
-      selectedSkills.filter((skill) => skill !== skillToRemove)
-    );
-  };
-
-  const handleAddCustomSkill = () => {
-    if (newSkill.trim() && !selectedSkills.includes(newSkill.trim())) {
-      setSelectedSkills([...selectedSkills, newSkill.trim()]);
-      setNewSkill("");
-    }
+  const handleApply = (jobId) => {
+    navigate(`/volunteer/jobs/${jobId}/apply`);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow">
+    <div className="max-w-7xl mx-auto p-6">
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg shadow mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <h1 className="text-2xl font-semibold text-gray-800">
-            Post Volunteer Opportunity
+            Volunteer Opportunities
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Create a new volunteer position for your organization
+            Find and apply for volunteer positions in your community
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Basic Information
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={jobData.title}
-                onChange={(e) =>
-                  setJobData((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                  errors.title ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="e.g., Community Garden Volunteer"
-              />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-500">{errors.title}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={jobData.description}
-                onChange={(e) =>
-                  setJobData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={4}
-                className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                  errors.description ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="Describe the volunteer opportunity..."
-              />
-              {errors.description && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.description}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Schedule and Capacity */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Schedule and Capacity
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={jobData.type}
+        <div className="p-6">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search opportunities..."
+                  value={filters.search}
                   onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, type: e.target.value }))
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
                   }
-                  className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md"
+                />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+
+              <div className="relative">
+                <select
+                  value={filters.type}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, type: e.target.value }))
+                  }
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md appearance-none"
                 >
+                  <option value="">All Types</option>
                   <option value="oneTime">One-time</option>
                   <option value="recurring">Recurring</option>
                   <option value="flexible">Flexible</option>
                 </select>
+                <Filter className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Available Spots <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={jobData.spots}
-                  onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, spots: e.target.value }))
-                  }
-                  className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                    errors.spots ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.spots && (
-                  <p className="mt-1 text-sm text-red-500">{errors.spots}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={jobData.date}
-                  onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, date: e.target.value }))
-                  }
-                  className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                    errors.date ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.date && (
-                  <p className="mt-1 text-sm text-red-500">{errors.date}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Start Time <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={jobData.startTime}
-                    onChange={(e) =>
-                      setJobData((prev) => ({
-                        ...prev,
-                        startTime: e.target.value,
-                      }))
-                    }
-                    className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                      errors.startTime ? "border-red-500" : "border-gray-300"
-                    }`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    End Time <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={jobData.endTime}
-                    onChange={(e) =>
-                      setJobData((prev) => ({
-                        ...prev,
-                        endTime: e.target.value,
-                      }))
-                    }
-                    className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                      errors.endTime ? "border-red-500" : "border-gray-300"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Location</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Location Name <span className="text-red-500">*</span>
-                </label>
+              <div className="relative">
                 <input
                   type="text"
-                  value={jobData.location}
+                  placeholder="Location..."
+                  value={filters.location}
                   onChange={(e) =>
-                    setJobData((prev) => ({
+                    setFilters((prev) => ({
                       ...prev,
                       location: e.target.value,
                     }))
                   }
-                  className={`mt-1 w-full px-4 py-2 border rounded-md ${
-                    errors.location ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="e.g., Community Center"
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md"
                 />
+                <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Street Address
-                </label>
+              <div className="relative">
                 <input
-                  type="text"
-                  value={jobData.address}
+                  type="date"
+                  value={filters.date}
                   onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, address: e.target.value }))
+                    setFilters((prev) => ({ ...prev, date: e.target.value }))
                   }
-                  className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
-                  placeholder="Street address"
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={jobData.city}
-                  onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, city: e.target.value }))
-                  }
-                  className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  value={jobData.zipCode}
-                  onChange={(e) =>
-                    setJobData((prev) => ({ ...prev, zipCode: e.target.value }))
-                  }
-                  className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Skills and Requirements */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Skills and Requirements
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Required Skills
-              </label>
-              <div className="mt-2 space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {selectedSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="ml-2 hover:text-blue-800"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    className="flex-grow px-4 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select a skill</option>
-                    {SKILL_OPTIONS.filter(
-                      (skill) => !selectedSkills.includes(skill)
-                    ).map((skill) => (
-                      <option key={skill} value={skill}>
-                        {skill}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => handleSkillSelect(newSkill)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Or type a custom skill"
-                    className="flex-grow px-4 py-2 border border-gray-300 rounded-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCustomSkill}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Add Custom
-                  </button>
-                </div>
+                <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Requirements
-              </label>
-              <textarea
-                value={jobData.requirements}
-                onChange={(e) =>
-                  setJobData((prev) => ({
-                    ...prev,
-                    requirements: e.target.value,
-                  }))
-                }
-                rows={3}
-                className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
-                placeholder="List any specific requirements or qualifications..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Benefits
-              </label>
-              <textarea
-                value={jobData.benefits}
-                onChange={(e) =>
-                  setJobData((prev) => ({ ...prev, benefits: e.target.value }))
-                }
-                rows={3}
-                className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md"
-                placeholder="Describe any benefits or perks for volunteers..."
-              />
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="pt-6 border-t border-gray-200">
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate("/organization/volunteer-jobs")}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                    Posting...
-                  </>
-                ) : (
-                  "Post Opportunity"
-                )}
+                Search Opportunities
               </button>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
 
-      {/* Preview Modal - Optional Feature */}
-      {/* You can add a preview modal here to show how the job posting will look */}
+      {/* Results */}
+      <div className="space-y-6">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        ) : jobs.length > 0 ? (
+          jobs.map((job) => (
+            <div
+              key={job.id}
+              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {job.title}
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {job.organization.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleApply(job.id)}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Apply Now
+                  </button>
+                </div>
+
+                <p className="mt-4 text-gray-600">{job.description}</p>
+
+                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center text-sm text-gray-500">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {job.city}, {job.state}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(job.date).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Clock className="h-4 w-4 mr-2" />
+                    {job.startTime} - {job.endTime}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Users className="h-4 w-4 mr-2" />
+                    {job.spots} spots available
+                  </div>
+                </div>
+
+                {job.skills && (
+                  <div className="mt-4">
+                    <div className="flex flex-wrap gap-2">
+                      {job.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No opportunities found
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Try adjusting your search filters or check back later.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default CreateVolunteerJob;
+export default VolunteerJobs;
