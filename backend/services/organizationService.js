@@ -7,6 +7,27 @@ const getOrganizationDocument = async (userId) => {
   return organizations.findOne({ userId: userId });
 };
 
+exports.getOrganizationById = async (orgId) => {
+  try {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+
+    // Find organization by profile.org_id
+    const organization = await organizations.findOne({
+      "profile.org_id": orgId,
+    });
+
+    if (!organization) {
+      return null;
+    }
+
+    return organization;
+  } catch (error) {
+    console.error("Error in getOrganizationById:", error);
+    throw error;
+  }
+};
+
 exports.createOrUpdateProfile = async (userId, profileData) => {
   const db = await connectToDatabase();
   const organizations = db.collection("organizations");
@@ -102,8 +123,12 @@ exports.createServiceRequest = async (userId, organizationId, requestData) => {
 
     // Verify service exists in organization's services
     const serviceExists = organization.services?.serviceList?.some(
-      (service) => service.id === requestData.serviceId
+      (service) =>
+        service.id.toString() === requestData.serviceId &&
+        service.name === requestData.serviceName &&
+        service.type === requestData.serviceType
     );
+
     if (!serviceExists) {
       throw new Error("Service not found");
     }

@@ -4,7 +4,9 @@ const organizationController = require("../controllers/organizationController");
 const authenticateToken = require("../middlewares/authenticateToken");
 
 // Apply authentication and org account type check to all routes
-router.use(authenticateToken, organizationController.checkOrgAccountType);
+router.use(authenticateToken);
+
+router.get("/getById/:id", organizationController.getOrganizationById);
 
 // Profile routes
 router.put("/profile", organizationController.createOrUpdateProfile);

@@ -22,7 +22,7 @@ const Services = () => {
     name: "",
     type: "",
     description: "",
-    availability: "always", // always, scheduled, limited
+    availability: "always",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -46,8 +46,24 @@ const Services = () => {
           },
         }
       );
+
+      // Handle both object and string array formats
+      const serviceList = response.data.serviceList || [];
+      const formattedServices = serviceList.map((service) => {
+        if (typeof service === "string") {
+          return {
+            name: service,
+            type: "other",
+            description: "",
+            availability: "always",
+            id: Date.now() + Math.random(),
+          };
+        }
+        return service;
+      });
+
       setDescription(response.data.description || "");
-      setServices(response.data.serviceList || []);
+      setServices(formattedServices);
     } catch (error) {
       console.error("Error fetching services:", error);
       toast.error("Failed to load services. Please try again.");
@@ -95,7 +111,7 @@ const Services = () => {
     }
 
     const updatedServices = [...services];
-    updatedServices[index] = newService;
+    updatedServices[index] = { ...newService, id: services[index].id };
     setServices(updatedServices);
     setEditingIndex(null);
     setNewService({
@@ -122,11 +138,15 @@ const Services = () => {
 
     try {
       const token = localStorage.getItem("token");
+
+      // Format services for backend
+      const serviceList = services.map((service) => service.name);
+
       await axios.put(
         "http://localhost:3000/api/organization/services",
         {
           description,
-          serviceList: services,
+          serviceList,
         },
         {
           headers: {

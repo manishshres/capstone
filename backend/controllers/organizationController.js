@@ -11,6 +11,27 @@ exports.checkOrgAccountType = (req, res, next) => {
   next();
 };
 
+exports.getOrganizationById = async (req, res) => {
+  try {
+    const orgId = req.params.id;
+
+    if (!orgId) {
+      return res.status(400).json({ error: "Organization ID is required" });
+    }
+
+    const organization = await organizationService.getOrganizationById(orgId);
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    res.status(200).json(organization);
+  } catch (error) {
+    logger.error("Error fetching organization by ID:", error);
+    res.status(500).json({ error: "Failed to fetch organization details" });
+  }
+};
+
 exports.createOrUpdateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -50,9 +71,17 @@ exports.getProfile = async (req, res) => {
 exports.updateServices = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const servicesData = req.body;
+    const { description, serviceList } = req.body;
 
-    await organizationService.updateServices(userId, servicesData);
+    // Ensure serviceList is an array of strings
+    if (!Array.isArray(serviceList)) {
+      return res.status(400).json({ error: "Service list must be an array" });
+    }
+
+    await organizationService.updateServices(userId, {
+      description,
+      serviceList,
+    });
 
     logger.info(`Services updated for organization: ${userId}`);
     res.status(200).json({ message: "Services updated successfully" });
@@ -69,6 +98,9 @@ exports.getServices = async (req, res) => {
     res.status(200).json(services);
   } catch (error) {
     logger.error("Error fetching organization services:", error);
+    if (error.message === "Organization not found") {
+      return res.status(404).json({ error: "Organization not found" });
+    }
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -106,7 +138,6 @@ exports.createServiceRequest = async (req, res) => {
     const userId = req.user.userId;
     const {
       organizationId,
-      serviceId,
       serviceName,
       description,
       preferredContact,
@@ -114,10 +145,10 @@ exports.createServiceRequest = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!organizationId || !serviceId || !description || !preferredContact) {
+    if (!organizationId || !serviceName || !description || !preferredContact) {
       return res.status(400).json({
         error:
-          "Missing required fields. Please provide organizationId, serviceId, description, and preferredContact.",
+          "Missing required fields. Please provide organizationId, serviceName, description, and preferredContact.",
       });
     }
 
@@ -138,7 +169,6 @@ exports.createServiceRequest = async (req, res) => {
     }
 
     const requestData = {
-      serviceId,
       serviceName,
       description,
       preferredContact,
