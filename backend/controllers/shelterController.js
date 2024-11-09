@@ -13,6 +13,7 @@ const getShelters = async (req, res) => {
       return res.json(shelter);
     }
 
+    // Ensure search query is provided
     if (!search) {
       return res.status(400).json({ error: "Search parameter is required" });
     }
@@ -25,21 +26,21 @@ const getShelters = async (req, res) => {
       shelters = await shelterService.getSheltersByZipcode(trimmedSearch);
     }
     // Check if input is lat,lng (two decimal numbers separated by comma)
-    else if (/^-?\d+\.?\d*,-?\d+\.?\d*$/.test(trimmedSearch)) {
+    else if (/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(trimmedSearch)) {
       const [lat, lng] = trimmedSearch.split(",").map(Number);
       shelters = await shelterService.getSheltersByLocation(lat, lng);
     }
     // Check if input is city, state (assumes format "City, State")
-    else if (/^(.+),\s*(.+)$/.test(trimmedSearch)) {
+    else if (/^([A-Za-z\s]+),\s*([A-Za-z\s]+)$/.test(trimmedSearch)) {
       const [city, state] = trimmedSearch.split(",").map((s) => s.trim());
       shelters = await shelterService.getSheltersByStateCity(state, city);
     }
-    // If none of the above, return an error
+    // Invalid search format
     else {
       logger.error("Invalid search format: ", trimmedSearch);
       return res.status(400).json({
         error:
-          "Invalid search format. Please use zipcode, lat,lng, or city,state",
+          "Invalid search format. Please use 'zipcode', 'lat,lng', or 'city,state'",
       });
     }
 

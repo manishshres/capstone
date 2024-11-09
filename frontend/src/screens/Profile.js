@@ -195,7 +195,7 @@ const Profile = () => {
                 >
                   <option value="">Select type...</option>
                   <option value="shelter">Shelter</option>
-                  <option value="food_bank">Food Bank</option>
+                  <option value="foodbank">Food Bank</option>
                 </select>
               </div>
             )}
