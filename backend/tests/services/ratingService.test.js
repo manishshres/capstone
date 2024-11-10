@@ -9,6 +9,7 @@ describe("Rating Service", () => {
   let mockRatings;
   let mockServiceRequests;
   let mockRatingStats;
+  let mockUsers;
 
   beforeEach(() => {
     mockRatings = {
@@ -29,11 +30,16 @@ describe("Rating Service", () => {
       insertOne: jest.fn(),
     };
 
+    mockUsers = {
+      findOne: jest.fn(),
+    };
+
     mockDb = {
       collection: jest.fn((name) => {
         if (name === "ratings") return mockRatings;
         if (name === "serviceRequests") return mockServiceRequests;
         if (name === "organizationRatingStats") return mockRatingStats;
+        if (name === "users") return mockUsers;
       }),
     };
 
@@ -116,8 +122,8 @@ describe("Rating Service", () => {
 
     it("should get paginated ratings with metadata", async () => {
       const mockRatingsData = [
-        { _id: "rating1", rating: 5 },
-        { _id: "rating2", rating: 4 },
+        { _id: "rating1", rating: 5, userId: "user1" },
+        { _id: "rating2", rating: 4, userId: "user2" },
       ];
 
       mockRatings.find.mockReturnValue({
@@ -129,6 +135,12 @@ describe("Rating Service", () => {
 
       mockRatings.countDocuments.mockResolvedValue(10);
 
+      mockUsers.findOne.mockResolvedValue({
+        _id: "user1",
+        name: "John Doe",
+        avatar: "avatar1",
+      });
+
       const result = await ratingService.getOrganizationRatings(
         organizationId,
         {
@@ -138,16 +150,37 @@ describe("Rating Service", () => {
       );
 
       expect(result).toEqual({
-        ratings: mockRatingsData,
-        metadata: {
+        ratings: expect.arrayContaining([
+          expect.objectContaining({
+            _id: "rating1",
+            rating: 5,
+            user: expect.objectContaining({
+              name: "John Doe",
+              avatar: "avatar1",
+            }),
+          }),
+        ]),
+        metadata: expect.objectContaining({
           total: 10,
           page: 1,
           totalPages: 5,
-        },
+        }),
       });
     });
 
     it("should apply rating filters correctly", async () => {
+      const mockRatingsData = [
+        { _id: "rating1", rating: 5 },
+        { _id: "rating2", rating: 4 },
+      ];
+
+      mockRatings.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        toArray: jest.fn().mockResolvedValue(mockRatingsData),
+      });
+
       await ratingService.getOrganizationRatings(organizationId, {
         minRating: 4,
         maxRating: 5,
@@ -216,7 +249,7 @@ describe("Rating Service", () => {
       expect(result).toBe(true);
       expect(mockRatings.updateOne).toHaveBeenCalledWith(
         {
-          _id: expect.any(ObjectId),
+          _id: "rating123",
           organizationId,
         },
         expect.objectContaining({

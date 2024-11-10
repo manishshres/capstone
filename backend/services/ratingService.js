@@ -11,7 +11,7 @@ exports.createRating = async (userId, serviceRequestId, ratingData) => {
 
     // Get service request details
     const serviceRequest = await serviceRequests.findOne({
-      _id: new ObjectId(serviceRequestId),
+      _id: serviceRequestId,
     });
 
     if (!serviceRequest) {
@@ -91,7 +91,7 @@ exports.createRating = async (userId, serviceRequestId, ratingData) => {
       ratingId: result.insertedId,
     };
   } catch (error) {
-    console.error("Error in createRating:", error);
+    //console.error("Error in createRating:", error);
     throw error;
   }
 };
@@ -168,7 +168,7 @@ exports.getOrganizationRatings = async (organizationId, options = {}) => {
       },
     };
   } catch (error) {
-    console.error("Error in getOrganizationRatings:", error);
+    //console.error("Error in getOrganizationRatings:", error);
     throw error;
   }
 };
@@ -206,7 +206,7 @@ exports.respondToRating = async (ratingId, organizationId, response) => {
 
     const result = await ratings.updateOne(
       {
-        _id: new ObjectId(ratingId),
+        _id: ratingId,
         organizationId,
       },
       {

@@ -192,7 +192,7 @@ exports.updateServiceRequestStatus = async (
     const result = await serviceRequests.updateOne(
       {
         organizationId,
-        _id: new ObjectId(requestId),
+        _id: requestId,
       },
       {
         $set: {
@@ -229,7 +229,7 @@ exports.respondToServiceRequest = async (
     // Get the current request to include in history
     const currentRequest = await serviceRequests.findOne({
       organizationId,
-      _id: new ObjectId(requestId),
+      _id: requestId,
     });
 
     if (!currentRequest) {
@@ -241,7 +241,7 @@ exports.respondToServiceRequest = async (
     const result = await serviceRequests.updateOne(
       {
         organizationId,
-        _id: new ObjectId(requestId),
+        _id: requestId,
       },
       {
         $set: {
