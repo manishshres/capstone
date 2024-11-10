@@ -6,29 +6,43 @@ import {
   Loader2,
   Building2,
   Search,
-  Calendar,
-  Clock,
   FileText,
   Send,
+  Mail,
+  Phone,
 } from "lucide-react";
 
 const RequestServices = () => {
   const [searchParams] = useSearchParams();
-  const shelterId = searchParams.get("shelter");
+  const orgId = searchParams.get("shelter");
   const [isLoading, setIsLoading] = useState(true);
-  const [shelterName, setShelterName] = useState("");
+  const [organization, setOrganization] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
-  const [selectedService, setSelectedService] = useState("");
-  const [requestData, setRequestData] = useState({
-    preferredDate: "",
-    preferredTime: "",
-    notes: "",
+  const [formData, setFormData] = useState({
+    serviceName: "",
+    serviceId: "",
+    serviceType: "",
+    description: "",
+    preferredContact: "email",
+    contactDetails: {
+      email: "",
+      phone: "",
+    },
   });
 
+  // Validation state
+  const isFormValid =
+    formData.serviceName &&
+    formData.description &&
+    formData.preferredContact &&
+    ((formData.preferredContact === "email" && formData.contactDetails.email) ||
+      (formData.preferredContact === "phone" && formData.contactDetails.phone));
+
   useEffect(() => {
-    const fetchShelterDetails = async () => {
-      if (!shelterId) {
+    const fetchOrganizationDetails = async () => {
+      if (!orgId) {
         setIsLoading(false);
         return;
       }
@@ -36,22 +50,96 @@ const RequestServices = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:3000/api/shelters?id=${shelterId}`,
+          `http://localhost:3000/api/organization/getById/${orgId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setShelterName(response.data.name);
+        setOrganization(response.data);
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching shelter details:", error);
-        toast.error("Failed to load shelter details");
+        console.error("Error fetching organization details:", error);
+        toast.error("Failed to load organization details");
         setIsLoading(false);
       }
     };
 
-    fetchShelterDetails();
-  }, [shelterId]);
+    fetchOrganizationDetails();
+  }, [orgId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isFormValid || !organization?.userId) return;
+
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:3000/api/organization/request",
+        {
+          organizationId: organization.userId,
+          serviceId: formData.serviceId,
+          serviceName: formData.serviceName,
+          serviceType: formData.serviceType,
+          description: formData.description,
+          preferredContact: formData.preferredContact,
+          contactDetails: formData.contactDetails,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Service request submitted successfully");
+      // Reset form
+      setFormData({
+        serviceName: "",
+        serviceId: "",
+        serviceType: "",
+        description: "",
+        preferredContact: "email",
+        contactDetails: {
+          email: "",
+          phone: "",
+        },
+      });
+    } catch (error) {
+      console.error("Error submitting service request:", error);
+      toast.error(
+        error.response?.data?.error || "Failed to submit service request"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchOrganizationDetails = async () => {
+      if (!orgId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        console.log("get by id");
+        const response = await axios.get(
+          `http://localhost:3000/api/organization/getById/${orgId}`, // Updated endpoint
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setOrganization(response.data);
+        console.log(response.data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching organization details:", error);
+        toast.error("Failed to load organization details");
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganizationDetails();
+  }, [orgId]);
 
   if (isLoading) {
     return (
@@ -61,7 +149,7 @@ const RequestServices = () => {
     );
   }
 
-  if (!shelterId) {
+  if (!orgId) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow">
@@ -74,10 +162,10 @@ const RequestServices = () => {
             <div className="text-center py-12">
               <Building2 className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No Shelter Selected
+                No Organization Selected
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Please search and select a shelter first before requesting
+                Please search and select an organization first before requesting
                 services
               </p>
               <div className="mt-6">
@@ -86,7 +174,7 @@ const RequestServices = () => {
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <Search className="mr-2 h-5 w-5" />
-                  Go to Shelter Search
+                  Go to Organization Search
                 </Link>
               </div>
             </div>
@@ -96,6 +184,22 @@ const RequestServices = () => {
     );
   }
 
+  const serviceList = organization?.services?.serviceList || [];
+  const formattedServices = serviceList.map((service) => {
+    if (typeof service === "object") {
+      return {
+        id: service.id || service.name,
+        name: service.name,
+        value: service.name,
+      };
+    }
+    return {
+      id: service,
+      name: service,
+      value: service,
+    };
+  });
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-lg shadow">
@@ -103,97 +207,145 @@ const RequestServices = () => {
           <h2 className="text-xl font-semibold text-gray-800">
             New Service Request
           </h2>
-          {shelterName && (
-            <p className="mt-1 text-sm text-gray-600">
+          {organization?.profile?.name && (
+            <p className="mt-1 text-sm text-gray-700">
               Requesting services from{" "}
-              <span className="font-medium">{shelterName}</span>
+              <span className="font-medium text-gray-700">
+                {organization.profile.name}
+              </span>
             </p>
           )}
         </div>
 
-        <form className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Service Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Service
             </label>
             <select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
+              value={formData.serviceName}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  serviceName: e.target.value,
+                }));
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
               <option value="">Select a service</option>
-              <option value="food">Food Assistance</option>
-              <option value="shelter">Temporary Shelter</option>
-              <option value="medical">Medical Care</option>
-              <option value="counseling">Counseling</option>
+              {formattedServices.map((service) => (
+                <option key={service.id} value={service.value}>
+                  {service.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Preferred Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={requestData.preferredDate}
-                  onChange={(e) =>
-                    setRequestData((prev) => ({
-                      ...prev,
-                      preferredDate: e.target.value,
-                    }))
-                  }
-                  min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-                <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Time
-              </label>
-              <div className="relative">
-                <input
-                  type="time"
-                  value={requestData.preferredTime}
-                  onChange={(e) =>
-                    setRequestData((prev) => ({
-                      ...prev,
-                      preferredTime: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-                <Clock className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
+          {/* Contact Preference */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Preferred Contact Method
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    preferredContact: "email",
+                  }))
+                }
+                className={`p-3 border rounded-md flex items-center justify-center gap-2 ${
+                  formData.preferredContact === "email"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <Mail className="h-5 w-5" />
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    preferredContact: "phone",
+                  }))
+                }
+                className={`p-3 border rounded-md flex items-center justify-center gap-2 ${
+                  formData.preferredContact === "phone"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <Phone className="h-5 w-5" />
+                Phone
+              </button>
             </div>
           </div>
 
-          {/* Messsage */}
+          {/* Contact Details */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Messsage
+              Contact Details
+            </label>
+            {formData.preferredContact === "email" ? (
+              <input
+                type="email"
+                value={formData.contactDetails.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contactDetails: {
+                      ...prev.contactDetails,
+                      email: e.target.value,
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your email address"
+                required
+              />
+            ) : (
+              <input
+                type="tel"
+                value={formData.contactDetails.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contactDetails: {
+                      ...prev.contactDetails,
+                      phone: e.target.value,
+                    },
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your phone number"
+                required
+              />
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
             </label>
             <div className="relative">
               <textarea
-                value={requestData.notes}
+                value={formData.description}
                 onChange={(e) =>
-                  setRequestData((prev) => ({
+                  setFormData((prev) => ({
                     ...prev,
-                    notes: e.target.value,
+                    description: e.target.value,
                   }))
                 }
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Any additional information about your request..."
+                placeholder="Please describe what you need help with..."
+                required
               />
               <FileText className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
@@ -202,12 +354,16 @@ const RequestServices = () => {
           {/* Submit Button */}
           <div className="pt-4">
             <button
-              type="button" // Changed from submit since we're not handling submission yet
-              disabled={true} // Disabled for now
+              type="submit"
+              disabled={!isFormValid || isSubmitting}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              <Send className="mr-2 h-5 w-5" />
-              Submit Request (Coming Soon)
+              {isSubmitting ? (
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ) : (
+                <Send className="mr-2 h-5 w-5" />
+              )}
+              {isSubmitting ? "Submitting..." : "Submit Request"}
             </button>
           </div>
         </form>
