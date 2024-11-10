@@ -11,6 +11,27 @@ exports.checkOrgAccountType = (req, res, next) => {
   next();
 };
 
+exports.getOrganizationById = async (req, res) => {
+  try {
+    const orgId = req.params.id;
+
+    if (!orgId) {
+      return res.status(400).json({ error: "Organization ID is required" });
+    }
+
+    const organization = await organizationService.getOrganizationById(orgId);
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    res.status(200).json(organization);
+  } catch (error) {
+    logger.error("Error fetching organization by ID:", error);
+    res.status(500).json({ error: "Failed to fetch organization details" });
+  }
+};
+
 exports.createOrUpdateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -50,9 +71,17 @@ exports.getProfile = async (req, res) => {
 exports.updateServices = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const servicesData = req.body;
+    const { description, serviceList } = req.body;
 
-    await organizationService.updateServices(userId, servicesData);
+    // Ensure serviceList is an array of strings
+    if (!Array.isArray(serviceList)) {
+      return res.status(400).json({ error: "Service list must be an array" });
+    }
+
+    await organizationService.updateServices(userId, {
+      description,
+      serviceList,
+    });
 
     logger.info(`Services updated for organization: ${userId}`);
     res.status(200).json({ message: "Services updated successfully" });
@@ -69,6 +98,9 @@ exports.getServices = async (req, res) => {
     res.status(200).json(services);
   } catch (error) {
     logger.error("Error fetching organization services:", error);
+    if (error.message === "Organization not found") {
+      return res.status(404).json({ error: "Organization not found" });
+    }
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -101,150 +133,212 @@ exports.getInventory = async (req, res) => {
   }
 };
 
-exports.createServiceRequest = async (req, res) => {
+const { connectToDatabase } = require("../config/mongoDbClient");
+const { ObjectId } = require("mongodb");
+
+const getOrganizationDocument = async (userId) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+  return organizations.findOne({ userId: userId });
+};
+
+exports.getOrganizationById = async (orgId) => {
   try {
-    const userId = req.user.userId;
-    const {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+
+    // Find organization by profile.org_id
+    const organization = await organizations.findOne({
+      "profile.org_id": orgId,
+    });
+
+    if (!organization) {
+      return null;
+    }
+
+    return organization;
+  } catch (error) {
+    console.error("Error in getOrganizationById:", error);
+    throw error;
+  }
+};
+
+exports.createOrUpdateProfile = async (userId, profileData) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+
+  const result = await organizations.updateOne(
+    { userId: userId },
+    {
+      $set: {
+        profile: profileData,
+        updatedAt: new Date(),
+      },
+      $setOnInsert: { createdAt: new Date() },
+    },
+    { upsert: true }
+  );
+
+  return { success: true, upsertedId: result.upsertedId };
+};
+
+exports.getOrganizationServices = async (userId) => {
+  const organization = await getOrganizationDocument(userId);
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+  // console.log(organization);
+  return organization.services;
+};
+
+exports.updateServices = async (userId, servicesData) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+
+  await organizations.updateOne(
+    { userId: userId },
+    {
+      $set: {
+        services: servicesData,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return { success: true };
+};
+
+exports.getOrganizationProfile = async (userId) => {
+  const organization = await getOrganizationDocument(userId);
+  if (!organization) {
+    throw new Error("Organization profile not found");
+  }
+  return organization.profile;
+};
+
+exports.getOrganizationInventory = async (userId) => {
+  const organization = await getOrganizationDocument(userId);
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+  // console.log(organization);
+  return organization.inventory;
+};
+
+exports.updateInventory = async (userId, inventoryData) => {
+  const db = await connectToDatabase();
+  const organizations = db.collection("organizations");
+
+  await organizations.updateOne(
+    { userId: userId },
+    {
+      $set: {
+        inventory: inventoryData,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return { success: true };
+};
+
+exports.createServiceRequest = async (userId, organizationId, requestData) => {
+  try {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+    const serviceRequests = db.collection("serviceRequests");
+
+    // Verify organization exists
+    const organization = await organizations.findOne({
+      userId: organizationId,
+    });
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    // Verify service exists in organization's services
+    const serviceExists = organization.services?.serviceList?.some(
+      (service) =>
+        service.id.toString() === requestData.serviceId &&
+        service.name === requestData.serviceName &&
+        service.type === requestData.serviceType
+    );
+
+    if (!serviceExists) {
+      throw new Error("Service not found");
+    }
+
+    const newRequest = {
+      userId,
       organizationId,
-      serviceId,
-      serviceName,
-      description,
-      preferredContact,
-      contactDetails,
-    } = req.body;
-
-    // Validate required fields
-    if (!organizationId || !serviceId || !description || !preferredContact) {
-      return res.status(400).json({
-        error:
-          "Missing required fields. Please provide organizationId, serviceId, description, and preferredContact.",
-      });
-    }
-
-    // Validate preferredContact
-    if (!["email", "phone"].includes(preferredContact)) {
-      return res.status(400).json({
-        error:
-          "Invalid preferredContact value. Must be either 'email' or 'phone'.",
-      });
-    }
-
-    // Validate contactDetails based on preferredContact
-    if (preferredContact === "email" && !contactDetails?.email) {
-      return res.status(400).json({ error: "Email contact details required" });
-    }
-    if (preferredContact === "phone" && !contactDetails?.phone) {
-      return res.status(400).json({ error: "Phone contact details required" });
-    }
-
-    const requestData = {
-      serviceId,
-      serviceName,
-      description,
-      preferredContact,
-      contactDetails,
-      status: "pending",
-      notes: "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      ...requestData,
+      responseData: null,
+      history: [
+        {
+          status: "pending",
+          timestamp: new Date(),
+          note: "Request created",
+        },
+      ],
     };
 
-    const result = await organizationService.createServiceRequest(
-      userId,
+    const result = await serviceRequests.insertOne(newRequest);
+    return {
+      success: true,
+      requestId: result.insertedId,
+    };
+  } catch (error) {
+    console.error("Error in createServiceRequest:", error);
+    throw error;
+  }
+};
+
+exports.getServiceRequests = async (organizationId, status = null) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const query = { organizationId };
+  if (status) {
+    query.status = status;
+  }
+
+  return await serviceRequests.find(query).sort({ createdAt: -1 }).toArray();
+};
+
+exports.getServiceRequestById = async (organizationId, requestId) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  return await serviceRequests.findOne({
+    organizationId,
+    _id: requestId,
+  });
+};
+
+exports.updateServiceRequestStatus = async (
+  organizationId,
+  requestId,
+  status,
+  notes
+) => {
+  const db = await connectToDatabase();
+  const serviceRequests = db.collection("serviceRequests");
+
+  const result = await serviceRequests.updateOne(
+    {
       organizationId,
-      requestData
-    );
-
-    logger.info(
-      `Service request created for organization ${organizationId} by user ${userId}`
-    );
-    res.status(201).json({
-      message: "Service request created successfully",
-      requestId: result.requestId,
-      status: "pending",
-    });
-  } catch (error) {
-    logger.error("Error creating service request:", error);
-
-    if (error.message === "Organization not found") {
-      return res.status(404).json({ error: "Organization not found" });
+      _id: requestId,
+    },
+    {
+      $set: {
+        status,
+        notes,
+        updatedAt: new Date(),
+      },
     }
+  );
 
-    if (error.message === "Service not found") {
-      return res.status(404).json({ error: "Service not found" });
-    }
-
-    res.status(500).json({ error: "Failed to create service request" });
-  }
-};
-
-exports.getServiceRequests = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const status = req.query.status; // Optional status filter
-
-    const requests = await organizationService.getServiceRequests(
-      userId,
-      status
-    );
-    res.status(200).json(requests);
-  } catch (error) {
-    logger.error("Error fetching service requests:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-exports.getServiceRequestById = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const requestId = req.params.requestId;
-
-    const request = await organizationService.getServiceRequestById(
-      userId,
-      requestId
-    );
-
-    if (!request) {
-      return res.status(404).json({ error: "Service request not found" });
-    }
-
-    res.status(200).json(request);
-  } catch (error) {
-    logger.error("Error fetching service request:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-exports.updateServiceRequestStatus = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const { requestId } = req.params;
-    const { status, notes } = req.body;
-
-    if (!["approved", "rejected", "completed", "cancelled"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
-    }
-
-    const result = await organizationService.updateServiceRequestStatus(
-      userId,
-      requestId,
-      status,
-      notes
-    );
-
-    if (!result) {
-      return res.status(404).json({ error: "Service request not found" });
-    }
-
-    logger.info(`Service request ${requestId} status updated to ${status}`);
-    res.status(200).json({
-      message: "Service request status updated successfully",
-      status,
-    });
-  } catch (error) {
-    logger.error("Error updating service request status:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  return result.modifiedCount > 0;
 };
 
 // Respond to service request
