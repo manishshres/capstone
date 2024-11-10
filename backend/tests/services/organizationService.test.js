@@ -307,4 +307,77 @@ describe("Organization Service - Service Requests", () => {
       expect(result).toBe(false);
     });
   });
+
+  describe("getOrganizationById", () => {
+    const orgId = "org123";
+
+    it("should return organization when found by org_id", async () => {
+      const mockOrg = {
+        profile: {
+          org_id: orgId,
+          name: "Test Organization",
+        },
+      };
+      mockOrganizations.findOne.mockResolvedValue(mockOrg);
+
+      const result = await organizationService.getOrganizationById(orgId);
+
+      expect(mockDb.collection).toHaveBeenCalledWith("organizations");
+      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
+        "profile.org_id": orgId,
+      });
+      expect(result).toEqual(mockOrg);
+    });
+
+    it("should return null when organization not found", async () => {
+      mockOrganizations.findOne.mockResolvedValue(null);
+
+      const result = await organizationService.getOrganizationById(orgId);
+
+      expect(mockDb.collection).toHaveBeenCalledWith("organizations");
+      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
+        "profile.org_id": orgId,
+      });
+      expect(result).toBeNull();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.findOne.mockRejectedValue(new Error("Database error"));
+
+      await expect(
+        organizationService.getOrganizationById(orgId)
+      ).rejects.toThrow("Database error");
+    });
+  });
+
+  describe("getServiceRequests with additional cases", () => {
+    const organizationId = "org123";
+
+    it("should handle service requests with no filters", async () => {
+      const mockRequests = [
+        { _id: "request1", status: "pending" },
+        { _id: "request2", status: "approved" },
+      ];
+      mockServiceRequests.find().sort().toArray.mockResolvedValue(mockRequests);
+
+      const result = await organizationService.getServiceRequests(
+        organizationId
+      );
+
+      expect(mockServiceRequests.find).toHaveBeenCalledWith({ organizationId });
+      expect(mockRequests).toEqual(mockRequests);
+    });
+
+    it("should handle database errors in service requests", async () => {
+      mockServiceRequests
+        .find()
+        .sort()
+        .toArray.mockRejectedValue(new Error("Database error"));
+    });
+  });
+
+  describe("updateServiceRequestStatus with additional cases", () => {
+    const organizationId = "org123";
+    const requestId = "request123";
+  });
 });
