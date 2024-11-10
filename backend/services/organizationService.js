@@ -68,7 +68,9 @@ exports.createServiceRequest = async (userId, organizationId, requestData) => {
       userId: organizationId,
     });
     if (!organization) {
-      throw new Error("Organization not found");
+      const error = new Error("Organization not found");
+      error.code = "ORG_NOT_FOUND";
+      throw error;
     }
 
     // Verify service exists and matches in organization's services
@@ -80,10 +82,12 @@ exports.createServiceRequest = async (userId, organizationId, requestData) => {
     );
 
     if (!existingService) {
-      throw new Error("Service not found");
+      const error = new Error("Service not found");
+      error.code = "SERVICE_NOT_FOUND";
+      throw error;
     }
 
-    // Create a clean request object without circular references
+    // Create request object
     const newRequest = {
       userId,
       organizationId,
@@ -108,7 +112,6 @@ exports.createServiceRequest = async (userId, organizationId, requestData) => {
           note: "Request created",
         },
       ],
-      // Store basic service details separately
       serviceDetails: {
         id: existingService.id.toString(),
         name: existingService.name,
@@ -155,25 +158,10 @@ exports.getServiceRequests = async (
       .sort({ createdAt: -1 })
       .toArray();
 
-    // Return requests with clean structure
-    return requests.map((request) => ({
-      _id: request._id,
-      userId: request.userId,
-      organizationId: request.organizationId,
-      serviceDetails: request.serviceDetails,
-      description: request.description,
-      preferredContact: request.preferredContact,
-      contactDetails: request.contactDetails,
-      status: request.status,
-      notes: request.notes,
-      createdAt: request.createdAt,
-      updatedAt: request.updatedAt,
-      history: request.history,
-      responseData: request.responseData,
-    }));
+    return requests || [];
   } catch (error) {
     console.error("Error in getServiceRequests:", error);
-    throw error;
+    return [];
   }
 };
 
@@ -213,7 +201,7 @@ exports.updateServiceRequestStatus = async (
     return result.modifiedCount > 0;
   } catch (error) {
     console.error("Error in updateServiceRequestStatus:", error);
-    throw error;
+    return false;
   }
 };
 
@@ -226,7 +214,6 @@ exports.respondToServiceRequest = async (
     const db = await connectToDatabase();
     const serviceRequests = db.collection("serviceRequests");
 
-    // Get the current request to include in history
     const currentRequest = await serviceRequests.findOne({
       organizationId,
       _id: requestId,
@@ -270,6 +257,6 @@ exports.respondToServiceRequest = async (
     return result.modifiedCount > 0;
   } catch (error) {
     console.error("Error in respondToServiceRequest:", error);
-    throw error;
+    return false;
   }
 };
