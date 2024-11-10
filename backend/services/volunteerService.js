@@ -1,5 +1,5 @@
 const { connectToDatabase } = require("../config/mongoDbClient");
-const { ObjectId } = require("mongodb");
+const { ObjectId } = require("bson");
 
 exports.createVolunteerJob = async (organizationId, jobData) => {
   const db = await connectToDatabase();
@@ -93,7 +93,7 @@ exports.updateVolunteerJob = async (jobId, jobData) => {
   };
 
   const result = await volunteerJobs.updateOne(
-    { _id: ObjectId(jobId) },
+    { _id: jobId },
     { $set: updateData }
   );
 
@@ -141,43 +141,52 @@ exports.getVolunteerJobById = async (jobId) => {
   const db = await connectToDatabase();
   const volunteerJobs = db.collection("volunteerJobs");
 
-  const job = await volunteerJobs.findOne({ _id: ObjectId(jobId) });
+  const job = await volunteerJobs.findOne({ _id: jobId });
   return job;
 };
 
 exports.applyForJob = async (jobId, volunteerId, applicationData) => {
-  const db = await connectToDatabase();
-  const volunteerJobs = db.collection("volunteerJobs");
-
-  const job = await volunteerJobs.findOne({ _id: ObjectId(jobId) });
-  if (!job) {
-    throw new Error("Job not found");
-  }
-
-  if (job.spots.available <= 0) {
-    throw new Error("No spots available");
-  }
-
-  const application = {
-    volunteerId,
-    status: "pending",
-    appliedAt: new Date(),
-    ...applicationData,
-  };
-
-  const result = await volunteerJobs.updateOne(
-    { _id: ObjectId(jobId) },
-    {
-      $push: { applications: application },
-      $inc: { "spots.available": -1, "spots.filled": 1 },
-      $set: { updatedAt: new Date() },
+  try {
+    if (!jobId || !volunteerId || !applicationData) {
+      throw new Error("Invalid input parameters");
     }
-  );
 
-  return {
-    success: true,
-    application,
-  };
+    const db = await connectToDatabase();
+    const volunteerJobs = db.collection("volunteerJobs");
+
+    const job = await volunteerJobs.findOne({ jobId });
+    if (!job) {
+      throw new Error("Job not found");
+    }
+
+    if (job.spots.available <= 0) {
+      throw new Error("No spots available");
+    }
+
+    const application = {
+      volunteerId,
+      status: "pending",
+      appliedAt: new Date(),
+      ...applicationData,
+    };
+
+    const result = await volunteerJobs.updateOne(
+      { _id: jobId },
+      {
+        $push: { applications: application },
+        $inc: { "spots.available": -1, "spots.filled": 1 },
+        $set: { updatedAt: new Date() },
+      }
+    );
+
+    return {
+      success: true,
+      application,
+    };
+  } catch (error) {
+    //console.error(error);
+    throw error;
+  }
 };
 
 exports.updateApplicationStatus = async (jobId, volunteerId, status) => {
@@ -186,7 +195,7 @@ exports.updateApplicationStatus = async (jobId, volunteerId, status) => {
 
   const result = await volunteerJobs.updateOne(
     {
-      _id: ObjectId(jobId),
+      _id: jobId,
       "applications.volunteerId": volunteerId,
     },
     {

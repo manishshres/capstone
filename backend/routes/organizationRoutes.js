@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const organizationController = require("../controllers/organizationController");
+const ratingController = require("../controllers/ratingController");
 const authenticateToken = require("../middlewares/authenticateToken");
 
 // Apply authentication and org account type check to all routes
@@ -31,5 +32,23 @@ router.patch(
   "/requests/:requestId/status",
   organizationController.updateServiceRequestStatus
 );
+
+// Public routes (require authentication but not org account)
+router.post(
+  "/service-requests/:serviceRequestId/rate",
+  ratingController.createRating
+);
+router.get(
+  "/organizations/:organizationId/ratings",
+  ratingController.getOrganizationRatings
+);
+router.get(
+  "/organizations/:organizationId/rating-stats",
+  ratingController.getOrganizationRatingStats
+);
+
+// Organization routes (require org account)
+router.use(checkOrgAccountType);
+router.post("/ratings/:ratingId/respond", ratingController.respondToRating);
 
 module.exports = router;

@@ -59,13 +59,12 @@ describe("Shelter Service", () => {
     expect(result).toEqual(mockShelterData);
     expect(https.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: "/zipcode?zipcode=12345",
+        path: "/resources?zipcode=12345",
       }),
       expect.any(Function)
     );
   });
 
-  // New test for fetching shelters by location
   test("should fetch shelters by location", async () => {
     setupMockResponse(mockShelterData);
 
@@ -74,13 +73,12 @@ describe("Shelter Service", () => {
     expect(result).toEqual(mockShelterData);
     expect(https.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: "/location?lat=40.7128&lng=-74.006&radius=1.4",
+        path: "/resources?latitude=40.7128&longitude=-74.006&radius=1.4",
       }),
       expect.any(Function)
     );
   });
 
-  // New test for fetching shelters by state and city
   test("should fetch shelters by state and city", async () => {
     setupMockResponse(mockShelterData);
 
@@ -89,7 +87,7 @@ describe("Shelter Service", () => {
     expect(result).toEqual(mockShelterData);
     expect(https.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: "/state-city?state=New%20York&city=NY",
+        path: "/resources?state=New%20York&city=NY",
       }),
       expect.any(Function)
     );

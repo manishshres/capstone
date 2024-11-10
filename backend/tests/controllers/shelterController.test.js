@@ -109,7 +109,7 @@ describe("Shelter Controller", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       error:
-        "Invalid search format. Please use zipcode, lat,lng, or city,state",
+        "Invalid search format. Please use 'zipcode', 'lat,lng', or 'city,state'",
     });
   });
 
