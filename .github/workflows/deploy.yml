@@ -1,0 +1,65 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on push to the 'main' branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # GitHub Actions runs on Ubuntu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy to EC2 using SSH
+        env:
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }} # GitHub secret for private key
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }} # GitHub secret for EC2 public IP
+        run: |
+          # Create directory for SSH key
+          mkdir -p ~/.ssh
+
+          # Save private key from GitHub secret to file
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/capstone.pem
+          chmod 400 ~/.ssh/capstone.pem
+
+          # Add SSH known hosts to avoid SSH prompts (important for first-time connections)
+          ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+
+          # SSH into EC2 instance and deploy
+          ssh -i ~/.ssh/capstone.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            # Update system (Amazon Linux 2023 specific)
+            sudo dnf update -y
+
+            # Navigate to your project directory
+            cd /path/to/your/project
+
+            # Pull latest changes from GitHub
+            git pull origin main
+
+            # Install dependencies
+            npm install
+
+            # Make sure PM2 is installed and running (for Amazon Linux 2023)
+            if ! command -v pm2 &> /dev/null
+            then
+              echo "PM2 could not be found, installing..."
+              sudo npm install -g pm2
+            fi
+
+            # Restart the application using PM2
+            pm2 restart mvp-backend || pm2 start ./backend/index.js --name mvp-backend
+
+            # Save PM2 process list to restart on reboot
+            pm2 save
+          EOF
