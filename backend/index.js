@@ -10,6 +10,7 @@ const userRoutes = require("./routes/userRoutes");
 const shelterRoutes = require("./routes/shelterRoutes");
 const organizationRoutes = require("./routes/organizationRoutes");
 const supportRoutes = require("./routes/supportRoutes");
+const ratingRoutes = require("./routes/ratingRoutes");
 
 const errorHandler = require("./middlewares/errorHandler");
 
@@ -26,6 +27,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/rating", ratingRoutes);
 app.use("/api", shelterRoutes);
 
 // Global error handling middleware
