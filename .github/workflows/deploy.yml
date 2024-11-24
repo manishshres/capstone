@@ -47,24 +47,24 @@ jobs:
           # Check if EC2_PUBLIC_IP is set
           if (-not $env:EC2_PUBLIC_IP) {
             Write-Error "EC2_PUBLIC_IP environment variable is not set"
-          exit 1
+            exit 1
           }
 
           # Check if EC2_PRIVATE_KEY is set
           if (-not $env:EC2_PRIVATE_KEY) {
             Write-Error "EC2_PRIVATE_KEY environment variable is not set"
-          exit 1
+            exit 1
           }
 
           # Create .ssh directory
           Write-Host "Creating .ssh directory..."
-          $sshPath = "$HOME\.ssh"
+          $sshPath = "$env:USERPROFILE\.ssh"
           New-Item -ItemType Directory -Force -Path $sshPath
           Write-Host ".ssh directory created at: $sshPath"
 
           # Write private key from secret
           Write-Host "Writing private key..."
-          $keyPath = "$HOME\.ssh\temp_key.pem"
+          $keyPath = "$sshPath\temp_key.pem"
           $env:EC2_PRIVATE_KEY | Out-File -FilePath $keyPath -Encoding ascii
           Write-Host "Private key written to: $keyPath"
 
