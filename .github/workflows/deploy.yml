@@ -52,7 +52,7 @@ jobs:
           fi
           pm2 save
           exit
-'@
+          '@
           # Convert to Unix line endings
           $deployScript = $deployScript -replace "`r`n", "`n"
           
