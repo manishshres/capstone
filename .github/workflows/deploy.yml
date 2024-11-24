@@ -94,7 +94,7 @@ jobs:
           pm2 save
           echo "✅ Deployment complete!"
           exit
-'@
+          '@
 
           # Convert to Unix line endings
           Write-Host "📝 Converting script to Unix line endings..."
