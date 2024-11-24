@@ -18,9 +18,9 @@ jobs:
     steps:
       - name: Configure Git safe directory
         run: |
-          Write-Host "🔧 Configuring Git safe directory..."
+          Write-Host "Configuring Git safe directory..."
           git config --global --add safe.directory ${{ github.workspace }}
-          Write-Host "✅ Git safe directory configured"
+          Write-Host "Git safe directory configured"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,86 +35,126 @@ jobs:
 
       - name: Install dependencies
         run: |
-          Write-Host "📦 Installing npm dependencies..."
+          Write-Host "Installing npm dependencies..."
           npm ci
-          Write-Host "✅ Dependencies installed"
+          Write-Host "Dependencies installed"
 
       - name: Setup SSH and Deploy
         shell: powershell
         run: |
-          Write-Host "🔑 Starting SSH setup and deployment process..."
+          Write-Host "Starting SSH setup and deployment process..."
 
-          # Create .ssh directory
-          Write-Host "📁 Creating .ssh directory..."
-          $sshPath = "$HOME\.ssh"
-          New-Item -ItemType Directory -Force -Path $sshPath
-          Write-Host "✅ .ssh directory created at: $sshPath"
+          # Print current username
+          Write-Host "Current Username: $env:USERNAME"
+
+          # Check if EC2_PUBLIC_IP is set
+          if (-not $env:EC2_PUBLIC_IP) {
+            Write-Error "EC2_PUBLIC_IP environment variable is not set"
+            exit 1
+          }
+
+          # Check if EC2_PRIVATE_KEY is set
+          if (-not $env:EC2_PRIVATE_KEY) {
+            Write-Error "EC2_PRIVATE_KEY environment variable is not set"
+            exit 1
+          }
+
+          # Define the SSH directory path
+          $sshPath = "C:\Users\manish\.ssh"
+          $keyPath = "$sshPath\temp_key.pem"
+
+          # Create .ssh directory if it does not exist
+          Write-Host "Creating .ssh directory..."
+          if (-not (Test-Path -Path $sshPath)) {
+            New-Item -ItemType Directory -Force -Path $sshPath
+          }
+
+          Write-Host ".ssh directory created at: $sshPath"
+          # Check if temp_key.pem exists and delete it if found
+          if (Test-Path -Path $keyPath) {
+            Write-Host "Found existing temp_key.pem. Deleting it..."
+            Remove-Item $keyPath -Force
+            Write-Host "temp_key.pem deleted."
+          } else {
+            Write-Host "temp_key.pem not found. Proceeding..."
+          }
 
           # Write private key from secret
-          Write-Host "📝 Writing private key..."
-          $keyPath = "$HOME\.ssh\temp_key.pem"
-          $env:EC2_PRIVATE_KEY | Out-File $keyPath
-          Write-Host "✅ Private key written to: $keyPath"
+          Write-Host "Writing private key..."
+          $keyPath = "$sshPath\temp_key.pem"
+          $env:EC2_PRIVATE_KEY | Out-File -FilePath $keyPath -Encoding ascii
+          Write-Host "Private key written to: $keyPath"
 
           # Set proper permissions
-          Write-Host "🔒 Setting key file permissions..."
+          Write-Host "Setting key file permissions..."
           icacls.exe $keyPath /inheritance:r
           icacls.exe $keyPath /grant:r "${env:USERNAME}:R"
-          Write-Host "✅ Permissions set on key file"
-          
+          Write-Host "Permissions set on key file"
+
           # Show current permissions
-          Write-Host "📄 Current key file permissions:"
+          Write-Host "Current key file permissions:"
           icacls.exe $keyPath
 
-          # Create deployment script
-          Write-Host "📜 Creating deployment script..."
+          # Create deployment script (Bash script to be run on EC2)
+          Write-Host "Creating deployment script..."
           $deployScript = @'
           #!/bin/bash
-          echo "🚀 Starting deployment on EC2..."
+          echo "Starting deployment on EC2..."
           cd /home/ec2-user/capstone
-          echo "📦 Pulling latest code..."
+          echo "Pulling latest code..."
           git pull origin master
-          echo "📦 Installing dependencies..."
+          echo "Installing dependencies..."
           npm ci
-          echo "🔧 Checking PM2..."
+          echo "Checking PM2..."
           if ! command -v pm2 &> /dev/null; then
-              echo "📦 Installing PM2..."
+              echo "Installing PM2..."
               sudo npm install -g pm2
           fi
-          echo "🔄 Managing PM2 process..."
+          echo "Managing PM2 process..."
           pm2 describe mvp-backend > /dev/null
           if [ $? -eq 0 ]; then
-              echo "🔄 Reloading existing PM2 process..."
+              echo "Reloading existing PM2 process..."
               pm2 reload mvp-backend
           else
-              echo "🚀 Starting new PM2 process..."
+              echo "Starting new PM2 process..."
               pm2 start ./backend/index.js --name mvp-backend
           fi
-          echo "💾 Saving PM2 configuration..."
+          echo "Saving PM2 configuration..."
           pm2 save
-          echo "✅ Deployment complete!"
-          exit
+          echo "Deployment complete!"
           '@
 
-          # Convert to Unix line endings
-          Write-Host "📝 Converting script to Unix line endings..."
+          # Convert the script to Unix line endings for compatibility
+          Write-Host "Converting script to Unix line endings..."
           $deployScript = $deployScript -replace "`r`n", "`n"
 
-          # Execute deployment using secrets
-          Write-Host "🚀 Executing deployment via SSH..."
-          Write-Host "🌐 Connecting to EC2 at: $env:EC2_PUBLIC_IP"
-          $deployScript | ssh -v -i $keyPath -o StrictHostKeyChecking=no ec2-user@$env:EC2_PUBLIC_IP 'bash -s'
-          
+          # Execute deployment via SSH
+          Write-Host "Executing deployment via SSH..."
+          Write-Host "Connecting to EC2 at: $env:EC2_PUBLIC_IP"
+          $deployScript | ssh -i $keyPath -o StrictHostKeyChecking=no ec2-user@$env:EC2_PUBLIC_IP 'bash -s'
+
           if ($LASTEXITCODE -eq 0) {
-              Write-Host "✅ Deployment completed successfully!"
+              Write-Host "Deployment completed successfully!"
           } else {
-              Write-Error "❌ Deployment failed with exit code: $LASTEXITCODE"
+              Write-Error "Deployment failed with exit code: $LASTEXITCODE"
           }
 
           # Clean up
-          Write-Host "🧹 Cleaning up temporary files..."
+          Write-Host "Cleaning up temporary files..."
+          # Release the file if in use and reset permissions
+          Write-Host "Resetting file permissions to allow deletion..."
+          icacls.exe $keyPath /grant:r "${env:USERNAME}:F"
+          # Add a short delay to ensure file is released
+          Start-Sleep -Seconds 2
+          # Now attempt to delete the key file
           Remove-Item $keyPath -Force
-          Write-Host "✅ Cleanup complete"
+          if (-not (Test-Path -Path $keyPath)) {
+            Write-Host "temp_key.pem successfully deleted."
+          }else{
+            Write-Error "Failed to delete temp_key.pem"
+          }
+          Write-Host "Cleanup complete"
+
         env:
           EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
