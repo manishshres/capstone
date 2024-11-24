@@ -61,13 +61,23 @@ jobs:
 
           # Define the SSH directory path
           $sshPath = "C:\Users\manish\.ssh"
+          $keyPath = "$sshPath\temp_key.pem"
 
           # Create .ssh directory if it does not exist
           Write-Host "Creating .ssh directory..."
           if (-not (Test-Path -Path $sshPath)) {
             New-Item -ItemType Directory -Force -Path $sshPath
           }
+
           Write-Host ".ssh directory created at: $sshPath"
+          # Check if temp_key.pem exists and delete it if found
+          if (Test-Path -Path $keyPath) {
+            Write-Host "Found existing temp_key.pem. Deleting it..."
+            Remove-Item $keyPath -Force
+            Write-Host "temp_key.pem deleted."
+          } else {
+            Write-Host "temp_key.pem not found. Proceeding..."
+          }
 
           # Write private key from secret
           Write-Host "Writing private key..."
