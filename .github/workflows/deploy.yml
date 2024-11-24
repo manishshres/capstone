@@ -44,6 +44,9 @@ jobs:
         run: |
           Write-Host "Starting SSH setup and deployment process..."
 
+          # Print current username
+          Write-Host "Current Username: $env:USERNAME"
+
           # Check if EC2_PUBLIC_IP is set
           if (-not $env:EC2_PUBLIC_IP) {
             Write-Error "EC2_PUBLIC_IP environment variable is not set"
