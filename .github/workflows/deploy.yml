@@ -141,8 +141,20 @@ jobs:
 
           # Clean up
           Write-Host "Cleaning up temporary files..."
+          # Release the file if in use and reset permissions
+          Write-Host "Resetting file permissions to allow deletion..."
+          icacls.exe $keyPath /grant:r "${env:USERNAME}:F"
+          # Add a short delay to ensure file is released
+          Start-Sleep -Seconds 2
+          # Now attempt to delete the key file
           Remove-Item $keyPath -Force
+          if (-not (Test-Path -Path $keyPath)) {
+            Write-Host "temp_key.pem successfully deleted."
+          }else{
+            Write-Error "Failed to delete temp_key.pem"
+          }
           Write-Host "Cleanup complete"
+
         env:
           EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
