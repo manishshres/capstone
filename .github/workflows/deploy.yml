@@ -53,7 +53,7 @@ jobs:
           # Write private key from secret
           Write-Host "📝 Writing private key..."
           $keyPath = "$HOME\.ssh\temp_key.pem"
-          $env:EC2_PRIVATE_KEY | Out-File $keyPath
+          $env:EC2_PRIVATE_KEY | Out-File -FilePath $keyPath -Encoding ascii
           Write-Host "✅ Private key written to: $keyPath"
 
           # Set proper permissions
@@ -61,12 +61,12 @@ jobs:
           icacls.exe $keyPath /inheritance:r
           icacls.exe $keyPath /grant:r "${env:USERNAME}:R"
           Write-Host "✅ Permissions set on key file"
-          
+
           # Show current permissions
           Write-Host "📄 Current key file permissions:"
           icacls.exe $keyPath
 
-          # Create deployment script
+          # Create deployment script (Bash script to be run on EC2)
           Write-Host "📜 Creating deployment script..."
           $deployScript = @'
           #!/bin/bash
@@ -96,15 +96,15 @@ jobs:
           exit
           '@
 
-          # Convert to Unix line endings
+          # Convert the script to Unix line endings for compatibility
           Write-Host "📝 Converting script to Unix line endings..."
           $deployScript = $deployScript -replace "`r`n", "`n"
 
-          # Execute deployment using secrets
+          # Execute deployment via SSH
           Write-Host "🚀 Executing deployment via SSH..."
           Write-Host "🌐 Connecting to EC2 at: $env:EC2_PUBLIC_IP"
-          $deployScript | ssh -v -i $keyPath -o StrictHostKeyChecking=no ec2-user@$env:EC2_PUBLIC_IP 'bash -s'
-          
+          $deployScript | ssh -i $keyPath -o StrictHostKeyChecking=no ec2-user@$env:EC2_PUBLIC_IP 'bash -s'
+
           if ($LASTEXITCODE -eq 0) {
               Write-Host "✅ Deployment completed successfully!"
           } else {
