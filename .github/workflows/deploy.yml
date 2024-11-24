@@ -17,7 +17,10 @@ jobs:
 
     steps:
       - name: Configure Git safe directory
-        run: git config --global --add safe.directory ${{ github.workspace }}
+        run: |
+          Write-Host "🔧 Configuring Git safe directory..."
+          git config --global --add safe.directory ${{ github.workspace }}
+          Write-Host "✅ Git safe directory configured"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,33 +30,91 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          Write-Host "📦 Installing npm dependencies..."
+          npm ci
+          Write-Host "✅ Dependencies installed"
 
-      - name: Deploy to EC2
+      - name: Setup SSH and Deploy
         shell: powershell
         run: |
+          Write-Host "🔑 Starting SSH setup and deployment process..."
+
+          # Create .ssh directory
+          Write-Host "📁 Creating .ssh directory..."
+          $sshPath = "$HOME\.ssh"
+          New-Item -ItemType Directory -Force -Path $sshPath
+          Write-Host "✅ .ssh directory created at: $sshPath"
+
+          # Write private key from secret
+          Write-Host "📝 Writing private key..."
+          $keyPath = "$HOME\.ssh\temp_key.pem"
+          $env:EC2_PRIVATE_KEY | Out-File $keyPath
+          Write-Host "✅ Private key written to: $keyPath"
+
+          # Set proper permissions
+          Write-Host "🔒 Setting key file permissions..."
+          icacls.exe $keyPath /inheritance:r
+          icacls.exe $keyPath /grant:r "${env:USERNAME}:R"
+          Write-Host "✅ Permissions set on key file"
+          
+          # Show current permissions
+          Write-Host "📄 Current key file permissions:"
+          icacls.exe $keyPath
+
+          # Create deployment script
+          Write-Host "📜 Creating deployment script..."
           $deployScript = @'
           #!/bin/bash
+          echo "🚀 Starting deployment on EC2..."
           cd /home/ec2-user/capstone
+          echo "📦 Pulling latest code..."
           git pull origin master
+          echo "📦 Installing dependencies..."
           npm ci
+          echo "🔧 Checking PM2..."
           if ! command -v pm2 &> /dev/null; then
+              echo "📦 Installing PM2..."
               sudo npm install -g pm2
           fi
+          echo "🔄 Managing PM2 process..."
           pm2 describe mvp-backend > /dev/null
           if [ $? -eq 0 ]; then
+              echo "🔄 Reloading existing PM2 process..."
               pm2 reload mvp-backend
           else
+              echo "🚀 Starting new PM2 process..."
               pm2 start ./backend/index.js --name mvp-backend
           fi
+          echo "💾 Saving PM2 configuration..."
           pm2 save
+          echo "✅ Deployment complete!"
           exit
 '@
+
           # Convert to Unix line endings
+          Write-Host "📝 Converting script to Unix line endings..."
           $deployScript = $deployScript -replace "`r`n", "`n"
+
+          # Execute deployment using secrets
+          Write-Host "🚀 Executing deployment via SSH..."
+          Write-Host "🌐 Connecting to EC2 at: $env:EC2_PUBLIC_IP"
+          $deployScript | ssh -v -i $keyPath -o StrictHostKeyChecking=no ec2-user@$env:EC2_PUBLIC_IP 'bash -s'
           
-          $deployScript | ssh -v -i "C:\projects\capstone.pem" -o ConnectTimeout=10 -o StrictHostKeyChecking=no ec2-user@54.211.27.60 'bash -s'
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "✅ Deployment completed successfully!"
+          } else {
+              Write-Error "❌ Deployment failed with exit code: $LASTEXITCODE"
+          }
+
+          # Clean up
+          Write-Host "🧹 Cleaning up temporary files..."
+          Remove-Item $keyPath -Force
+          Write-Host "✅ Cleanup complete"
+        env:
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
