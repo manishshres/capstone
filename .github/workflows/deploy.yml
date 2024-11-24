@@ -27,32 +27,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20" # Using LTS version instead of 22
-          cache: "npm"
+          node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          npm ci  # Using ci instead of install for more reliable builds
-
-      - name: Setup SSH
-        run: |
-          # Create .ssh directory if it doesn't exist
-          New-Item -ItemType Directory -Force -Path "$HOME\.ssh"
-
-          # Write private key with proper permissions
-          $EC2_PRIVATE_KEY = $env:EC2_PRIVATE_KEY
-          Set-Content -Path "$HOME\.ssh\capstone.pem" -Value $EC2_PRIVATE_KEY -Force
-          # Secure the private key file
-          icacls "$HOME\.ssh\capstone.pem" /inheritance:r /grant:r "${env:USERNAME}:R"
-
-          # Add host key
-          $EC2_PUBLIC_IP = $env:EC2_PUBLIC_IP
-          ssh-keyscan -H $EC2_PUBLIC_IP | Out-File "$HOME\.ssh\known_hosts" -Append
-        env:
-          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+        run: npm ci
 
       - name: Deploy to EC2
+        shell: powershell
         run: |
           $deployScript = @'
           #!/bin/bash
@@ -70,14 +52,8 @@ jobs:
           fi
           pm2 save
           exit
-          '@
-
+'@
           # Convert to Unix line endings
           $deployScript = $deployScript -replace "`r`n", "`n"
-
-          # Execute deployment
-          $EC2_PUBLIC_IP = $env:EC2_PUBLIC_IP
-          $deployScript | ssh -i "$HOME\.ssh\capstone.pem" -o StrictHostKeyChecking=accept-new ec2-user@$EC2_PUBLIC_IP 'bash -s'
-        env:
-          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+          
+          $deployScript | ssh -v -i "C:\projects\capstone.pem" -o ConnectTimeout=10 -o StrictHostKeyChecking=no ec2-user@54.211.27.60 'bash -s'
