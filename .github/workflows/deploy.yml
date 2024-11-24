@@ -60,7 +60,7 @@ jobs:
           }
 
           # Define the SSH directory path
-          $sshPath = "C:\Users\manish\.ssh"
+          $sshPath = "C:\Users\manish\AppData\Local\Temp\.ssh"
 
           # Create .ssh directory if it does not exist
           Write-Host "Creating .ssh directory..."
