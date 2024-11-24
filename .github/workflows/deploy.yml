@@ -56,10 +56,14 @@ jobs:
             exit 1
           }
 
-          # Create .ssh directory
+          # Define the SSH directory path
+          $sshPath = "C:\Users\manish\.ssh"
+
+          # Create .ssh directory if it does not exist
           Write-Host "Creating .ssh directory..."
-          $sshPath = "$env:USERPROFILE\.ssh"
-          New-Item -ItemType Directory -Force -Path $sshPath
+          if (-not (Test-Path -Path $sshPath)) {
+            New-Item -ItemType Directory -Force -Path $sshPath
+          }
           Write-Host ".ssh directory created at: $sshPath"
 
           # Write private key from secret
