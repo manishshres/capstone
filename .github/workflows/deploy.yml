@@ -112,7 +112,6 @@ jobs:
           echo "Saving PM2 configuration..."
           pm2 save
           echo "Deployment complete!"
-          exit
           '@
 
           # Convert the script to Unix line endings for compatibility
