@@ -37,7 +37,7 @@ exports.getOrganizationById = async (req, res) => {
 exports.updateOrganizationProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const profileData = req.body.profile;
+    const profileData = req.body;
 
     logger.info(`Updating organization profile for user: ${userId}`);
     const result = await organizationService.updateOrganizationProfile(
@@ -160,4 +160,3 @@ exports.getOrganizationInventory = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

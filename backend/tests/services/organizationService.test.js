@@ -4,380 +4,291 @@ const organizationService = require("../../services/organizationService");
 jest.mock("../../config/mongoDbClient");
 jest.mock("../../utils/logger");
 
-describe("Organization Service - Service Requests", () => {
+describe("Organization Service", () => {
   let mockDb;
   let mockOrganizations;
-  let mockServiceRequests;
 
   beforeEach(() => {
-    mockServiceRequests = {
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      findOne: jest.fn(),
-      find: jest.fn(() => ({
-        sort: jest.fn(() => ({
-          toArray: jest.fn(),
-        })),
-      })),
-    };
-
+    realDateNow = Date.now;
+    global.Date.now = jest.fn(() => 1234567890);
     mockOrganizations = {
       findOne: jest.fn(),
       updateOne: jest.fn(),
     };
 
     mockDb = {
-      collection: jest.fn((name) => {
-        if (name === "organizations") return mockOrganizations;
-        if (name === "serviceRequests") return mockServiceRequests;
-        return null;
-      }),
+      collection: jest.fn().mockReturnValue(mockOrganizations),
     };
 
     connectToDatabase.mockResolvedValue(mockDb);
   });
 
-  beforeAll(() => {
-    jest.spyOn(console, "error").mockImplementation(() => {});
+  afterEach(() => {
+    global.Date.now = realDateNow;
   });
 
-  afterAll(() => {
-    console.error.mockRestore();
-  });
-
-  describe("createServiceRequest", () => {
+  describe("getOrganizationDocument", () => {
     const userId = "user123";
-    const organizationId = "org123";
-    const requestData = {
-      serviceId: "service123",
-      serviceName: "Test Service",
-      serviceType: "food",
-      description: "Test request",
-      preferredContact: "email",
-      contactDetails: {
-        email: "test@example.com",
-      },
-    };
 
-    it("should create service request successfully", async () => {
-      const mockOrg = {
-        services: {
-          serviceList: [
-            {
-              id: "service123",
-              name: "Test Service",
-              type: "food",
-            },
-          ],
-        },
-      };
-
-      mockOrganizations.findOne.mockResolvedValue(mockOrg);
-      mockServiceRequests.insertOne.mockResolvedValue({
-        insertedId: "request123",
-      });
-
-      const result = await organizationService.createServiceRequest(
-        userId,
-        organizationId,
-        requestData
-      );
-
-      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
-        userId: organizationId,
-      });
-
-      expect(mockServiceRequests.insertOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId,
-          organizationId,
-          serviceId: requestData.serviceId,
-          serviceName: requestData.serviceName,
-          serviceType: requestData.serviceType,
-          status: "pending",
-          history: expect.arrayContaining([
-            expect.objectContaining({
-              status: "pending",
-              note: "Request created",
-              timestamp: expect.any(Date),
-            }),
-          ]),
-        })
-      );
-
-      expect(result).toEqual({
-        success: true,
-        requestId: "request123",
-        serviceDetails: expect.objectContaining({
-          id: "service123",
-          name: "Test Service",
-          type: "food",
-        }),
-      });
-    });
-
-    it("should throw error if organization not found", async () => {
-      mockOrganizations.findOne.mockResolvedValue(null);
-
-      await expect(
-        organizationService.createServiceRequest(
-          userId,
-          organizationId,
-          requestData
-        )
-      ).rejects.toThrow("Organization not found");
-    });
-
-    it("should throw error if service not found", async () => {
-      const mockOrg = {
-        services: {
-          serviceList: [
-            {
-              id: "different_service",
-              name: "Different Service",
-              type: "different",
-            },
-          ],
-        },
-      };
-
+    it("should find organization by userId or org_id", async () => {
+      const mockOrg = { userId, profile: { name: "Test Org" } };
       mockOrganizations.findOne.mockResolvedValue(mockOrg);
 
-      await expect(
-        organizationService.createServiceRequest(
-          userId,
-          organizationId,
-          requestData
-        )
-      ).rejects.toThrow("Service not found");
-    });
-  });
-
-  describe("getServiceRequests", () => {
-    const organizationId = "org123";
-
-    it("should get service requests with filters", async () => {
-      const mockRequests = [
-        { _id: "request1", status: "pending" },
-        { _id: "request2", status: "approved" },
-      ];
-
-      // Setup the mock chain properly
-      mockServiceRequests.find().sort().toArray.mockResolvedValue(mockRequests);
-
-      const result = await organizationService.getServiceRequests(
-        organizationId,
-        "pending",
-        "food"
-      );
-
-      expect(mockServiceRequests.find).toHaveBeenCalledWith({
-        organizationId,
-        status: "pending",
-        serviceType: "food",
-      });
-
-      expect(mockRequests).toEqual(mockRequests); // Changed this expectation
-    });
-
-    it("should return empty array if no requests found", async () => {
-      //mockServiceRequests.find().toArray.mockResolvedValue([]);
-
-      // const result = await organizationService.getServiceRequests(
-      //   organizationId
-      // );
-
-      expect([]).toEqual([]);
-    });
-  });
-
-  describe("updateServiceRequestStatus", () => {
-    const organizationId = "org123";
-    const requestId = "request123";
-    const status = "approved";
-    const notes = "Approved request";
-
-    it("should update request status successfully", async () => {
-      mockServiceRequests.updateOne.mockResolvedValue({ modifiedCount: 1 });
-
-      const result = await organizationService.updateServiceRequestStatus(
-        organizationId,
-        requestId,
-        status,
-        notes
-      );
-
-      expect(mockServiceRequests.updateOne).toHaveBeenCalledWith(
-        {
-          organizationId,
-          _id: requestId,
-        },
-        {
-          $set: {
-            status,
-            notes,
-            updatedAt: expect.any(Date),
-          },
-          $push: {
-            history: expect.objectContaining({
-              status,
-              note: notes,
-              timestamp: expect.any(Date),
-            }),
-          },
-        }
-      );
-
-      expect(result).toBe(true);
-    });
-
-    it("should return false if request not found", async () => {
-      mockServiceRequests.updateOne.mockResolvedValue({ modifiedCount: 0 });
-
-      const result = await organizationService.updateServiceRequestStatus(
-        organizationId,
-        requestId,
-        status,
-        notes
-      );
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe("respondToServiceRequest", () => {
-    const organizationId = "org123";
-    const requestId = "request123";
-    const responseData = {
-      response: "We can help",
-      availabilityDate: "2024-12-01",
-      additionalInfo: "Please bring ID",
-    };
-
-    it("should add response to request successfully", async () => {
-      const mockRequest = {
-        _id: requestId,
-        serviceId: "service123",
-        serviceName: "Test Service",
-        serviceType: "food",
-      };
-
-      mockServiceRequests.findOne.mockResolvedValue(mockRequest);
-      mockServiceRequests.updateOne.mockResolvedValue({ modifiedCount: 1 });
-
-      const result = await organizationService.respondToServiceRequest(
-        organizationId,
-        requestId,
-        responseData
-      );
-
-      expect(mockServiceRequests.updateOne).toHaveBeenCalledWith(
-        {
-          organizationId,
-          _id: requestId,
-        },
-        expect.objectContaining({
-          $set: expect.objectContaining({
-            responseData: expect.objectContaining({
-              ...responseData,
-              updatedAt: expect.any(Date),
-            }),
-          }),
-          $push: {
-            history: expect.objectContaining({
-              note: "Response added to request",
-              responseDetails: responseData,
-            }),
-          },
-        })
-      );
-
-      expect(result).toBe(true);
-    });
-
-    it("should return false if request not found", async () => {
-      mockServiceRequests.findOne.mockResolvedValue(null);
-
-      const result = await organizationService.respondToServiceRequest(
-        organizationId,
-        requestId,
-        responseData
-      );
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe("getOrganizationById", () => {
-    const orgId = "org123";
-
-    it("should return organization when found by org_id", async () => {
-      const mockOrg = {
-        profile: {
-          org_id: orgId,
-          name: "Test Organization",
-        },
-      };
-      mockOrganizations.findOne.mockResolvedValue(mockOrg);
-
-      const result = await organizationService.getOrganizationById(orgId);
+      const result = await organizationService.getOrganizationById(userId);
 
       expect(mockDb.collection).toHaveBeenCalledWith("organizations");
       expect(mockOrganizations.findOne).toHaveBeenCalledWith({
-        "profile.org_id": orgId,
+        $or: [{ userId }, { "profile.org_id": userId }],
       });
       expect(result).toEqual(mockOrg);
-    });
-
-    it("should return null when organization not found", async () => {
-      mockOrganizations.findOne.mockResolvedValue(null);
-
-      const result = await organizationService.getOrganizationById(orgId);
-
-      expect(mockDb.collection).toHaveBeenCalledWith("organizations");
-      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
-        "profile.org_id": orgId,
-      });
-      expect(result).toBeNull();
     });
 
     it("should handle database errors", async () => {
       mockOrganizations.findOne.mockRejectedValue(new Error("Database error"));
 
       await expect(
-        organizationService.getOrganizationById(orgId)
+        organizationService.getOrganizationById(userId)
       ).rejects.toThrow("Database error");
     });
   });
 
-  describe("getServiceRequests with additional cases", () => {
-    const organizationId = "org123";
+  describe("getOrganizationProfile", () => {
+    const userId = "user123";
 
-    it("should handle service requests with no filters", async () => {
-      const mockRequests = [
-        { _id: "request1", status: "pending" },
-        { _id: "request2", status: "approved" },
-      ];
-      mockServiceRequests.find().sort().toArray.mockResolvedValue(mockRequests);
+    it("should return organization profile when found", async () => {
+      const mockProfile = { name: "Test Org", description: "Test Description" };
+      mockOrganizations.findOne.mockResolvedValue({ profile: mockProfile });
 
-      const result = await organizationService.getServiceRequests(
-        organizationId
-      );
+      const result = await organizationService.getOrganizationProfile(userId);
 
-      expect(mockServiceRequests.find).toHaveBeenCalledWith({ organizationId });
-      expect(mockRequests).toEqual(mockRequests);
+      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
+        $or: [{ userId }, { "profile.org_id": userId }],
+      });
+      expect(result).toEqual(mockProfile);
     });
 
-    it("should handle database errors in service requests", async () => {
-      mockServiceRequests
-        .find()
-        .sort()
-        .toArray.mockRejectedValue(new Error("Database error"));
+    it("should return undefined when organization not found", async () => {
+      mockOrganizations.findOne.mockResolvedValue(null);
+
+      const result = await organizationService.getOrganizationProfile(userId);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.findOne.mockRejectedValue(new Error("Database error"));
+
+      await expect(
+        organizationService.getOrganizationProfile(userId)
+      ).rejects.toThrow("Database error");
     });
   });
 
-  describe("updateServiceRequestStatus with additional cases", () => {
-    const organizationId = "org123";
-    const requestId = "request123";
+  describe("updateOrganizationProfile", () => {
+    const userId = "user123";
+    const profileData = {
+      name: "Updated Org",
+      description: "Updated Description",
+    };
+
+    it("should update profile successfully", async () => {
+      mockOrganizations.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      const result = await organizationService.updateOrganizationProfile(
+        userId,
+        profileData
+      );
+
+      expect(mockOrganizations.updateOne).toHaveBeenCalledWith(
+        { userId },
+        {
+          $set: {
+            "profile.name": "Updated Org",
+            "profile.description": "Updated Description",
+            updatedAt: expect.any(Date),
+          },
+        }
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.updateOne.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        organizationService.updateOrganizationProfile(userId, profileData)
+      ).rejects.toThrow("Database error");
+    });
+  });
+
+  describe("getOrganizationServices", () => {
+    const userId = "user123";
+
+    it("should return services when found", async () => {
+      const mockServices = {
+        description: "Our Services",
+        serviceList: [{ id: "service1", name: "Service 1" }],
+      };
+      mockOrganizations.findOne.mockResolvedValue({ services: mockServices });
+
+      const result = await organizationService.getOrganizationServices(userId);
+
+      expect(result).toEqual(mockServices);
+    });
+
+    it("should return undefined when organization not found", async () => {
+      mockOrganizations.findOne.mockResolvedValue(null);
+
+      const result = await organizationService.getOrganizationServices(userId);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.findOne.mockRejectedValue(new Error("Database error"));
+
+      await expect(
+        organizationService.getOrganizationServices(userId)
+      ).rejects.toThrow("Database error");
+    });
+  });
+
+  describe("updateOrganizationServices", () => {
+    const userId = "user123";
+    const servicesData = {
+      description: "Updated Services",
+      serviceList: [
+        {
+          id: 123456789,
+          name: "Service 1",
+          type: "type1",
+          description: "Service 1 desc",
+          availability: "always",
+        },
+      ],
+    };
+
+    it("should update services successfully", async () => {
+      mockOrganizations.updateOne.mockResolvedValue({ modifiedCount: 1 });
+      const fixedDate = new Date("2024-01-01T00:00:00Z");
+      jest.spyOn(global, "Date").mockImplementation(() => fixedDate);
+
+      mockOrganizations.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      const result = await organizationService.updateOrganizationServices(
+        userId,
+        servicesData
+      );
+
+      expect(mockOrganizations.updateOne).toHaveBeenCalledWith(
+        { userId },
+        {
+          $set: {
+            "services.description": "Updated Services",
+            "services.serviceList": expect.arrayContaining([
+              expect.objectContaining({
+                id: 123456789,
+                name: "Service 1",
+                type: "type1",
+                description: "Service 1 desc",
+                availability: "always",
+              }),
+            ]),
+            updatedAt: fixedDate,
+          },
+        }
+      );
+      expect(result).toEqual({ success: true });
+
+      jest.spyOn(global, "Date").mockRestore();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.updateOne.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        organizationService.updateOrganizationServices(userId, servicesData)
+      ).rejects.toThrow("Database error");
+    });
+  });
+
+  describe("getOrganizationInventory", () => {
+    const userId = "user123";
+
+    it("should return inventory when found", async () => {
+      const mockInventory = {
+        description: "Our Inventory",
+        inventoryList: [{ id: "item1", name: "Item 1" }],
+      };
+      mockOrganizations.findOne.mockResolvedValue({ inventory: mockInventory });
+
+      const result = await organizationService.getOrganizationInventory(userId);
+
+      expect(result).toEqual(mockInventory);
+    });
+
+    it("should return undefined when organization not found", async () => {
+      mockOrganizations.findOne.mockResolvedValue(null);
+
+      const result = await organizationService.getOrganizationInventory(userId);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.findOne.mockRejectedValue(new Error("Database error"));
+
+      await expect(
+        organizationService.getOrganizationInventory(userId)
+      ).rejects.toThrow("Database error");
+    });
+  });
+
+  describe("updateOrganizationInventory", () => {
+    const userId = "user123";
+    const inventoryData = {
+      description: "Updated Inventory",
+      inventoryList: [{ id: "item1", name: "Item 1", quantity: 10 }],
+    };
+
+    it("should update inventory successfully", async () => {
+      const fixedDate = new Date("2024-01-01T00:00:00Z");
+      jest.spyOn(global, "Date").mockImplementation(() => fixedDate);
+
+      mockOrganizations.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      const result = await organizationService.updateOrganizationInventory(
+        userId,
+        inventoryData
+      );
+
+      expect(mockOrganizations.updateOne).toHaveBeenCalledWith(
+        { userId },
+        {
+          $set: {
+            "inventory.description": "Updated Inventory",
+            "inventory.inventoryList": inventoryData.inventoryList,
+            updatedAt: fixedDate,
+          },
+        }
+      );
+      expect(result).toEqual({ success: true });
+
+      jest.spyOn(global, "Date").mockRestore();
+    });
+
+    it("should handle database errors", async () => {
+      mockOrganizations.updateOne.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        organizationService.updateOrganizationInventory(userId, inventoryData)
+      ).rejects.toThrow("Database error");
+    });
   });
 });

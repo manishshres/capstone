@@ -1,45 +1,47 @@
 const { ObjectId } = require("mongodb");
 const ratingService = require("../../services/ratingService");
 const { connectToDatabase } = require("../../config/mongoDbClient");
+const { logger } = require("../../utils/logger");
 
 jest.mock("../../config/mongoDbClient");
+jest.mock("../../utils/logger");
 
 describe("Rating Service", () => {
   let mockDb;
   let mockRatings;
-  let mockServiceRequests;
-  let mockRatingStats;
-  let mockUsers;
+  let mockOrganizations;
+  let mockSupports;
 
   beforeEach(() => {
     mockRatings = {
       findOne: jest.fn(),
       insertOne: jest.fn(),
-      find: jest.fn(),
+      find: jest.fn().mockReturnValue({
+        toArray: jest.fn(),
+      }),
       updateOne: jest.fn(),
-      countDocuments: jest.fn(),
     };
 
-    mockServiceRequests = {
+    mockOrganizations = {
       findOne: jest.fn(),
     };
 
-    mockRatingStats = {
-      findOne: jest.fn(),
-      updateOne: jest.fn(),
-      insertOne: jest.fn(),
-    };
-
-    mockUsers = {
+    mockSupports = {
       findOne: jest.fn(),
     };
 
     mockDb = {
       collection: jest.fn((name) => {
-        if (name === "ratings") return mockRatings;
-        if (name === "serviceRequests") return mockServiceRequests;
-        if (name === "organizationRatingStats") return mockRatingStats;
-        if (name === "users") return mockUsers;
+        switch (name) {
+          case "ratings":
+            return mockRatings;
+          case "organizations":
+            return mockOrganizations;
+          case "supports":
+            return mockSupports;
+          default:
+            return null;
+        }
       }),
     };
 
@@ -47,234 +49,174 @@ describe("Rating Service", () => {
   });
 
   describe("createRating", () => {
+    const organizationId = "org123";
     const userId = "user123";
-    const serviceRequestId = "request123";
     const ratingData = {
       rating: 5,
-      feedback: "Great service!",
+      comment: "Great service!",
     };
 
-    it("should create a new rating successfully", async () => {
-      const mockServiceRequest = {
-        _id: serviceRequestId,
-        organizationId: "org123",
-        serviceName: "Test Service",
-      };
+    it("should create rating successfully", async () => {
+      const mockInsertedId = new ObjectId();
 
-      mockServiceRequests.findOne.mockResolvedValue(mockServiceRequest);
-      mockRatings.findOne.mockResolvedValue(null);
-      mockRatings.insertOne.mockResolvedValue({ insertedId: "rating123" });
-      mockRatingStats.findOne.mockResolvedValue({
-        organizationId: "org123",
-        averageRating: 4.5,
-        totalRatings: 10,
-        ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 3, 5: 6 },
-      });
+      mockOrganizations.findOne.mockResolvedValue({ userId: organizationId });
+      mockSupports.findOne.mockResolvedValue({ _id: "support123" });
+      mockRatings.insertOne.mockResolvedValue({ insertedId: mockInsertedId });
 
       const result = await ratingService.createRating(
+        organizationId,
         userId,
-        serviceRequestId,
         ratingData
       );
 
-      expect(result).toEqual({
-        success: true,
-        ratingId: "rating123",
+      expect(mockOrganizations.findOne).toHaveBeenCalledWith({
+        userId: organizationId,
       });
-
-      expect(mockRatings.insertOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId,
-          organizationId: "org123",
-          serviceRequestId,
-          rating: 5,
-          feedback: "Great service!",
-          status: "active",
-        })
-      );
-
-      expect(mockRatingStats.updateOne).toHaveBeenCalled();
+      expect(mockSupports.findOne).toHaveBeenCalledWith({
+        userId,
+        organizationId,
+      });
+      expect(mockRatings.insertOne).toHaveBeenCalledWith({
+        organizationId,
+        userId,
+        rating: ratingData.rating,
+        comment: ratingData.comment,
+        createdAt: expect.any(Date),
+      });
+      expect(result).toEqual(mockInsertedId);
     });
 
-    it("should throw error if service request not found", async () => {
-      mockServiceRequests.findOne.mockResolvedValue(null);
+    it("should throw error when organization not found", async () => {
+      mockOrganizations.findOne.mockResolvedValue(null);
 
       await expect(
-        ratingService.createRating(userId, serviceRequestId, ratingData)
-      ).rejects.toThrow("Service request not found");
+        ratingService.createRating(organizationId, userId, ratingData)
+      ).rejects.toThrow("Organization not found");
+
+      expect(logger.error).toHaveBeenCalled();
     });
 
-    it("should throw error if user already rated", async () => {
-      mockServiceRequests.findOne.mockResolvedValue({
-        _id: serviceRequestId,
-        organizationId: "org123",
-      });
-      mockRatings.findOne.mockResolvedValue({ _id: "existingRating" });
+    it("should throw error when user has not received support", async () => {
+      mockOrganizations.findOne.mockResolvedValue({ userId: organizationId });
+      mockSupports.findOne.mockResolvedValue(null);
 
       await expect(
-        ratingService.createRating(userId, serviceRequestId, ratingData)
-      ).rejects.toThrow("You have already rated this service");
+        ratingService.createRating(organizationId, userId, ratingData)
+      ).rejects.toThrow("You have not received support from this organization");
+
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
-  describe("getOrganizationRatings", () => {
-    const organizationId = "org123";
+  describe("getRatingById", () => {
+    const ratingId = "507f1f77bcf86cd799439011"; // Valid ObjectId string
 
-    it("should get paginated ratings with metadata", async () => {
-      const mockRatingsData = [
-        { _id: "rating1", rating: 5, userId: "user1" },
-        { _id: "rating2", rating: 4, userId: "user2" },
-      ];
-
-      mockRatings.find.mockReturnValue({
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        toArray: jest.fn().mockResolvedValue(mockRatingsData),
-      });
-
-      mockRatings.countDocuments.mockResolvedValue(10);
-
-      mockUsers.findOne.mockResolvedValue({
-        _id: "user1",
-        name: "John Doe",
-        avatar: "avatar1",
-      });
-
-      const result = await ratingService.getOrganizationRatings(
-        organizationId,
-        {
-          page: 1,
-          limit: 2,
-        }
-      );
-
-      expect(result).toEqual({
-        ratings: expect.arrayContaining([
-          expect.objectContaining({
-            _id: "rating1",
-            rating: 5,
-            user: expect.objectContaining({
-              name: "John Doe",
-              avatar: "avatar1",
-            }),
-          }),
-        ]),
-        metadata: expect.objectContaining({
-          total: 10,
-          page: 1,
-          totalPages: 5,
-        }),
-      });
-    });
-
-    it("should apply rating filters correctly", async () => {
-      const mockRatingsData = [
-        { _id: "rating1", rating: 5 },
-        { _id: "rating2", rating: 4 },
-      ];
-
-      mockRatings.find.mockReturnValue({
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        toArray: jest.fn().mockResolvedValue(mockRatingsData),
-      });
-
-      await ratingService.getOrganizationRatings(organizationId, {
-        minRating: 4,
-        maxRating: 5,
-      });
-
-      expect(mockRatings.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          organizationId,
-          status: "active",
-          rating: { $gte: 4, $lte: 5 },
-        })
-      );
-    });
-  });
-
-  describe("getOrganizationRatingStats", () => {
-    const organizationId = "org123";
-
-    it("should return existing stats", async () => {
-      const mockStats = {
-        organizationId,
-        averageRating: 4.5,
-        totalRatings: 10,
-        ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 3, 5: 6 },
+    it("should return rating when found", async () => {
+      const mockRating = {
+        _id: new ObjectId(ratingId),
+        rating: 5,
+        comment: "Great service!",
       };
+      mockRatings.findOne.mockResolvedValue(mockRating);
 
-      mockRatingStats.findOne.mockResolvedValue(mockStats);
+      const result = await ratingService.getRatingById(ratingId);
 
-      const result = await ratingService.getOrganizationRatingStats(
-        organizationId
-      );
-
-      expect(result).toEqual(mockStats);
+      expect(mockRatings.findOne).toHaveBeenCalledWith({
+        _id: expect.any(ObjectId),
+      });
+      expect(result).toEqual(mockRating);
     });
 
-    it("should return default stats if none exist", async () => {
-      mockRatingStats.findOne.mockResolvedValue(null);
+    it("should throw error when rating not found", async () => {
+      mockRatings.findOne.mockResolvedValue(null);
 
-      const result = await ratingService.getOrganizationRatingStats(
-        organizationId
+      await expect(ratingService.getRatingById(ratingId)).rejects.toThrow(
+        "Rating not found"
       );
 
-      expect(result).toEqual({
-        organizationId,
-        averageRating: 0,
-        totalRatings: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      });
+      expect(logger.error).toHaveBeenCalled();
+    });
+
+    it("should throw error with invalid ObjectId", async () => {
+      const invalidId = "invalid-id";
+
+      await expect(ratingService.getRatingById(invalidId)).rejects.toThrow();
+
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
-  describe("respondToRating", () => {
-    const ratingId = "rating123";
-    const organizationId = "org123";
-    const response = "Thank you for your feedback!";
+  describe("updateRating", () => {
+    const ratingId = "507f1f77bcf86cd799439011";
+    const updates = {
+      rating: 4,
+      comment: "Updated comment",
+    };
 
-    it("should add response to rating successfully", async () => {
-      mockRatings.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    it("should update rating successfully", async () => {
+      mockRatings.updateOne.mockResolvedValue({ matchedCount: 1 });
 
-      const result = await ratingService.respondToRating(
-        ratingId,
-        organizationId,
-        response
-      );
+      const result = await ratingService.updateRating(ratingId, updates);
 
-      expect(result).toBe(true);
       expect(mockRatings.updateOne).toHaveBeenCalledWith(
-        {
-          _id: "rating123",
-          organizationId,
-        },
-        expect.objectContaining({
-          $set: {
-            response: {
-              text: response,
-              respondedAt: expect.any(Date),
-              respondedBy: organizationId,
-            },
-            updatedAt: expect.any(Date),
-          },
-        })
+        { _id: expect.any(ObjectId) },
+        { $set: updates }
       );
+      expect(result).toBe(true);
     });
 
-    it("should return false if rating not found", async () => {
-      mockRatings.updateOne.mockResolvedValue({ modifiedCount: 0 });
+    it("should throw error when rating not found", async () => {
+      mockRatings.updateOne.mockResolvedValue({ matchedCount: 0 });
 
-      const result = await ratingService.respondToRating(
-        ratingId,
-        organizationId,
-        response
-      );
+      await expect(
+        ratingService.updateRating(ratingId, updates)
+      ).rejects.toThrow("Rating not found");
 
-      expect(result).toBe(false);
+      expect(logger.error).toHaveBeenCalled();
+    });
+
+    it("should throw error with invalid ObjectId", async () => {
+      const invalidId = "invalid-id";
+
+      await expect(
+        ratingService.updateRating(invalidId, updates)
+      ).rejects.toThrow();
+
+      expect(logger.error).toHaveBeenCalled();
+    });
+  });
+
+  describe("getRatings", () => {
+    const organizationId = "org123";
+
+    it("should return list of ratings", async () => {
+      const mockRatingsList = [
+        { _id: new ObjectId(), rating: 5, comment: "Great!" },
+        { _id: new ObjectId(), rating: 4, comment: "Good" },
+      ];
+      mockRatings.find().toArray.mockResolvedValue(mockRatingsList);
+
+      const result = await ratingService.getRatings(organizationId);
+
+      expect(mockRatings.find).toHaveBeenCalledWith({ organizationId });
+      expect(result).toEqual(mockRatingsList);
+    });
+
+    it("should return empty array when no ratings found", async () => {
+      mockRatings.find().toArray.mockResolvedValue([]);
+
+      const result = await ratingService.getRatings(organizationId);
+
+      expect(mockRatings.find).toHaveBeenCalledWith({ organizationId });
+      expect(result).toEqual([]);
+    });
+
+    it("should handle database errors", async () => {
+      mockRatings.find().toArray.mockRejectedValue(new Error("Database error"));
+
+      await expect(ratingService.getRatings(organizationId)).rejects.toThrow();
+
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 });

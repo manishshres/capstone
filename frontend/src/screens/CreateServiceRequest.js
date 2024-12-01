@@ -12,7 +12,7 @@ import {
   Phone,
 } from "lucide-react";
 
-const RequestServices = () => {
+const CreateServiceRequest = () => {
   const [searchParams] = useSearchParams();
   const orgId = searchParams.get("shelter");
   const [isLoading, setIsLoading] = useState(true);
@@ -21,9 +21,11 @@ const RequestServices = () => {
 
   // Form state
   const [formData, setFormData] = useState({
-    serviceName: "",
-    serviceId: "",
-    serviceType: "",
+    service: {
+      id: "",
+      name: "",
+      type: "",
+    },
     description: "",
     preferredContact: "email",
     contactDetails: {
@@ -34,12 +36,11 @@ const RequestServices = () => {
 
   // Validation state
   const isFormValid =
-    formData.serviceName &&
+    formData.service.name &&
     formData.description &&
     formData.preferredContact &&
     ((formData.preferredContact === "email" && formData.contactDetails.email) ||
       (formData.preferredContact === "phone" && formData.contactDetails.phone));
-
   useEffect(() => {
     const fetchOrganizationDetails = async () => {
       if (!orgId) {
@@ -50,16 +51,21 @@ const RequestServices = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:3000/api/organization/getById/${orgId}`,
+          `http://localhost:3000/api/organization/${orgId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+        console.log("Raw service data:", response.data.services?.serviceList);
         setOrganization(response.data);
+        console.log(response.data);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching organization details:", error);
-        toast.error("Failed to load organization details");
+        const errorMessage =
+          error.response?.data?.message ||
+          "Failed to load organization details";
+        toast.error(errorMessage);
         setIsLoading(false);
       }
     };
@@ -74,13 +80,24 @@ const RequestServices = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("token");
+      console.log(organization?.userId);
+      console.log({
+        organizationId: organization.userId,
+        serviceId: formData.service.id,
+        serviceName: formData.service.name,
+        serviceType: formData.service.type,
+        description: formData.description,
+        preferredContact: formData.preferredContact,
+        contactDetails: formData.contactDetails,
+      });
+
       await axios.post(
-        "http://localhost:3000/api/organization/request",
+        `http://localhost:3000/api/support/new-request`,
         {
           organizationId: organization.userId,
-          serviceId: formData.serviceId,
-          serviceName: formData.serviceName,
-          serviceType: formData.serviceType,
+          serviceId: formData.service.id,
+          serviceName: formData.service.name,
+          serviceType: formData.service.type,
           description: formData.description,
           preferredContact: formData.preferredContact,
           contactDetails: formData.contactDetails,
@@ -92,9 +109,11 @@ const RequestServices = () => {
       toast.success("Service request submitted successfully");
       // Reset form
       setFormData({
-        serviceName: "",
-        serviceId: "",
-        serviceType: "",
+        service: {
+          id: "",
+          name: "",
+          type: "",
+        },
         description: "",
         preferredContact: "email",
         contactDetails: {
@@ -104,43 +123,30 @@ const RequestServices = () => {
       });
     } catch (error) {
       console.error("Error submitting service request:", error);
-      toast.error(
-        error.response?.data?.error || "Failed to submit service request"
-      );
+      const errorMessage =
+        error.response?.data?.message || "Failed to submit service request";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    const fetchOrganizationDetails = async () => {
-      if (!orgId) {
-        setIsLoading(false);
-        return;
-      }
+  const handleServiceSelection = (e) => {
+    const selectedService = formattedServices.find(
+      (service) => service.value === e.target.value
+    );
 
-      try {
-        const token = localStorage.getItem("token");
-        console.log("get by id");
-        const response = await axios.get(
-          `http://localhost:3000/api/organization/getById/${orgId}`, // Updated endpoint
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setOrganization(response.data);
-        console.log(response.data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching organization details:", error);
-        toast.error("Failed to load organization details");
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizationDetails();
-  }, [orgId]);
-
+    if (selectedService) {
+      setFormData((prev) => ({
+        ...prev,
+        service: {
+          id: selectedService.id,
+          name: selectedService.name,
+          type: selectedService.type || "",
+        },
+      }));
+    }
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-16rem)]">
@@ -188,15 +194,17 @@ const RequestServices = () => {
   const formattedServices = serviceList.map((service) => {
     if (typeof service === "object") {
       return {
-        id: service.id || service.name,
+        id: service.id,
         name: service.name,
         value: service.name,
+        type: service.type,
       };
     }
     return {
       id: service,
       name: service,
       value: service,
+      type: service,
     };
   });
 
@@ -224,13 +232,8 @@ const RequestServices = () => {
               Service
             </label>
             <select
-              value={formData.serviceName}
-              onChange={(e) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  serviceName: e.target.value,
-                }));
-              }}
+              value={formData.service.name}
+              onChange={handleServiceSelection}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
@@ -372,4 +375,4 @@ const RequestServices = () => {
   );
 };
 
-export default RequestServices;
+export default CreateServiceRequest;

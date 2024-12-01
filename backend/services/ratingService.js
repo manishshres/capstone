@@ -1,6 +1,5 @@
 const { connectToDatabase } = require("../config/mongoDbClient");
 const { ObjectId } = require("mongodb");
-
 const { logger } = require("../utils/logger");
 
 exports.createRating = async (organizationId, userId, ratingData) => {
@@ -9,37 +8,58 @@ exports.createRating = async (organizationId, userId, ratingData) => {
     const organizations = db.collection("organizations");
     const ratings = db.collection("ratings");
 
-    // Check if organization exists
-    const organization = await organizations.findOne({
-      userId: organizationId,
-    });
+    // First try to find by _id
+    let organization = await organizations.findOne({ _id: organizationId });
+
+    // If not found, try to find by profile.org_id
+    if (!organization) {
+      organization = await organizations.findOne({
+        "profile.org_id": organizationId.toString(),
+      });
+    }
+
     if (!organization) {
       throw new Error("Organization not found");
     }
 
-    // Check if user has received support from the organization
-    const supportRequests = db.collection("supports");
-    const supportRequest = await supportRequests.findOne({
+    // Use the organization's MongoDB _id for the rating
+    const orgMongoId = organization.userId.toString();
+
+    // Check if user has already rated this organization
+    const existingRating = await ratings.findOne({
+      organizationId: orgMongoId,
       userId,
-      organizationId,
     });
-    if (!supportRequest) {
-      throw new Error("You have not received support from this organization");
+
+    if (existingRating) {
+      // Update existing rating
+      const result = await ratings.updateOne(
+        { _id: existingRating._id },
+        {
+          $set: {
+            rating: ratingData.rating,
+            comment: ratingData.comment,
+            updatedAt: new Date(),
+          },
+        }
+      );
+      return existingRating._id;
+    } else {
+      // Create new rating
+      const newRating = {
+        organizationId: orgMongoId,
+        userId,
+        rating: ratingData.rating,
+        comment: ratingData.comment,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const result = await ratings.insertOne(newRating);
+      return result.insertedId;
     }
-
-    // Create rating
-    const newRating = {
-      organizationId,
-      userId,
-      rating: ratingData.rating,
-      comment: ratingData.comment,
-      createdAt: new Date(),
-    };
-
-    const result = await ratings.insertOne(newRating);
-    return result.insertedId;
   } catch (error) {
-    logger.error("Error creating rating:", error, organizationId);
+    logger.error("Error creating/updating rating:", error, organizationId);
     throw error;
   }
 };
@@ -67,10 +87,33 @@ exports.updateRating = async (ratingId, updates) => {
   try {
     const db = await connectToDatabase();
     const ratings = db.collection("ratings");
+    const organizations = db.collection("organizations");
+
+    // First try to find by _id
+    let organization = await organizations.findOne({ _id: ratingId });
+
+    // If not found, try to find by profile.org_id
+    if (!organization) {
+      organization = await organizations.findOne({
+        "profile.org_id": ratingId.toString(),
+      });
+    }
+
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    const orgMongoId = organization.userId.toString();
 
     const result = await ratings.updateOne(
       { _id: ObjectId.createFromHexString(ratingId) },
-      { $set: updates }
+      {
+        $set: {
+          ...updates,
+          organizationId: orgMongoId,
+          updatedAt: new Date(),
+        },
+      }
     );
 
     if (result.matchedCount === 0) {
@@ -87,9 +130,27 @@ exports.updateRating = async (ratingId, updates) => {
 exports.getRatings = async (organizationId) => {
   try {
     const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
     const ratings = db.collection("ratings");
 
-    const ratingsList = await ratings.find({ organizationId }).toArray();
+    // First try to find by _id
+    let organization = await organizations.findOne({ _id: organizationId });
+
+    // If not found, try to find by profile.org_id
+    if (!organization) {
+      organization = await organizations.findOne({
+        "profile.org_id": organizationId.toString(),
+      });
+    }
+
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    const orgMongoId = organization.userId.toString();
+    const ratingsList = await ratings
+      .find({ organizationId: orgMongoId })
+      .toArray();
     return ratingsList;
   } catch (error) {
     logger.error("Error getting ratings:", error);
@@ -97,4 +158,51 @@ exports.getRatings = async (organizationId) => {
   }
 };
 
-// needs to add average
+exports.getAverageRating = async (organizationId) => {
+  try {
+    const db = await connectToDatabase();
+    const organizations = db.collection("organizations");
+    const ratings = db.collection("ratings");
+
+    // First try to find by _id
+    let organization = await organizations.findOne({ _id: organizationId });
+
+    // If not found, try to find by profile.org_id
+    if (!organization) {
+      organization = await organizations.findOne({
+        "profile.org_id": organizationId.toString(),
+      });
+    }
+
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    const orgMongoId = organization.userId.toString();
+
+    const pipeline = [
+      { $match: { organizationId: orgMongoId } },
+      {
+        $group: {
+          _id: "$organizationId",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 },
+        },
+      },
+    ];
+
+    const result = await ratings.aggregate(pipeline).toArray();
+
+    if (result.length === 0) {
+      return { averageRating: 0, totalRatings: 0 };
+    }
+
+    return {
+      averageRating: Number(result[0].averageRating.toFixed(1)),
+      totalRatings: result[0].totalRatings,
+    };
+  } catch (error) {
+    logger.error("Error getting average rating:", error);
+    throw error;
+  }
+};

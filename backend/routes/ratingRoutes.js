@@ -6,6 +6,7 @@ const authenticateToken = require("../middlewares/authenticateToken");
 router.use(authenticateToken);
 
 router.get("/org/:id", ratingController.getRatings);
+router.get("/org/:id/average", ratingController.getAverageRating);
 router.post("/:id", ratingController.createRating);
 router.get("/:id", ratingController.getRatingById);
 router.put("/:id", ratingController.updateRating);
