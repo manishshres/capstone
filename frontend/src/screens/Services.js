@@ -146,7 +146,7 @@ const Services = () => {
         "http://localhost:3000/api/organization/services",
         {
           description,
-          serviceList,
+          serviceList: services,
         },
         {
           headers: {

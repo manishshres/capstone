@@ -61,10 +61,22 @@ const Sidebar = () => {
 
   const volunteerMenuItems = [
     {
-      name: "Request Services",
-      path: "/request-services",
+      name: "Add Services",
+      path: "/add-request-services",
       icon: HandHelping,
-      show: !isOrg && !isVolunteer,
+      show: isOrg,
+    },
+    {
+      name: "Create Request Services",
+      path: "/create-request-services",
+      icon: HandHelping,
+      show: !isOrg,
+    },
+    {
+      name: "View Request Services",
+      path: "/view-request-services",
+      icon: HandHelping,
+      show: true,
     },
   ];
 

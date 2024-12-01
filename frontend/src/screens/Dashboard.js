@@ -419,7 +419,9 @@ const Dashboard = () => {
                     {authState.user?.accountType === "user" && (
                       <button
                         onClick={() =>
-                          navigate(`/request-services?shelter=${shelter.id}`)
+                          navigate(
+                            `/create-request-services?shelter=${shelter.id}`
+                          )
                         }
                         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >

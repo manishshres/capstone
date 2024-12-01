@@ -10,8 +10,9 @@ import Dashboard from "./screens/Dashboard";
 import Profile from "./screens/Profile";
 import Services from "./screens/Services";
 import Inventory from "screens/Inventory";
-import RequestServices from "screens/RequestServices";
+import CreateServiceRequest from "screens/CreateServiceRequest";
 import Shelters from "screens/Shelters";
+import ViewServiceRequest from "screens/ViewServiceRequest";
 
 function App() {
   return (
@@ -39,7 +40,7 @@ function App() {
             />
 
             <Route
-              path="/services"
+              path="/add-request-services"
               element={
                 <PrivateRoute>
                   <Services />
@@ -48,10 +49,18 @@ function App() {
             />
 
             <Route
-              path="/request-services"
+              path="/create-request-services"
               element={
                 <PrivateRoute>
-                  <RequestServices />
+                  <CreateServiceRequest />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/view-request-services"
+              element={
+                <PrivateRoute>
+                  <ViewServiceRequest />
                 </PrivateRoute>
               }
             />

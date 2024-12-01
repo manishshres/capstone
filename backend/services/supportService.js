@@ -20,7 +20,7 @@ exports.createSupportRequest = async (userId, organizationId, requestData) => {
     // Verify service exists and matches in organization's services
     const existingService = organization.services?.serviceList?.find(
       (service) =>
-        service.id.toString() === requestData.serviceId &&
+        service.id === requestData.serviceId &&
         service.name === requestData.serviceName &&
         service.type === requestData.serviceType
     );
