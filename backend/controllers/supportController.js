@@ -117,13 +117,15 @@ exports.getSupportRequests = async (req, res) => {
 exports.respondToSupportRequest = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { requestId } = req.params;
+    const { id } = req.params;
     const responseData = req.body;
 
-    logger.info(`Attempting to respond to support request: ${requestId}`);
+    console.log(id);
+
+    logger.info(`Attempting to respond to support request: ${id}`);
     const result = await supportService.respondToSupportRequest(
       userId,
-      requestId,
+      id,
       responseData
     );
 

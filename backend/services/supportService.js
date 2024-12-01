@@ -192,29 +192,38 @@ exports.updateSupportRequestStatus = async (
   }
 };
 
-exports.respondToSupportRequest = async (userId, requestId, responseData) => {
+exports.respondToSupportRequest = async (userId, id, responseData) => {
   try {
     const db = await connectToDatabase();
     const serviceRequests = db.collection("supports");
 
+    let objectId;
+    try {
+      objectId = ObjectId.createFromHexString(id);
+    } catch (error) {
+      throw new Error(`Invalid ObjectId format: ${id}`);
+    }
+
     const currentRequest = await serviceRequests.findOne({
-      userId,
-      _id: ObjectId.createFromHexString(requestId),
+      _id: objectId,
     });
 
+    console.log(currentRequest);
+
     if (!currentRequest) {
-      throw new Error("Request not found");
+      logger.error("Request not found for: ", id);
+      throw new Error("Request not found for: ", id);
     }
 
     const updateTime = new Date();
 
     const result = await serviceRequests.updateOne(
       {
-        userId,
-        _id: ObjectId.createFromHexString(requestId),
+        _id: objectId,
       },
       {
         $set: {
+          status: responseData.status,
           responseData: {
             ...responseData,
             updatedAt: updateTime,
@@ -223,7 +232,7 @@ exports.respondToSupportRequest = async (userId, requestId, responseData) => {
         },
         $push: {
           history: {
-            status: currentRequest.status,
+            status: responseData.status,
             timestamp: updateTime,
             note: "Response added to request",
             responseDetails: responseData,

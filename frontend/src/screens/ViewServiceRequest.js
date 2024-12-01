@@ -175,10 +175,7 @@ const ViewServiceRequest = () => {
     async (requestId, responseData) => {
       setState((prev) => ({ ...prev, isSubmitting: true }));
       try {
-        await apiClient.put(
-          `/api/support/request/${requestId}/respond`,
-          responseData
-        );
+        await apiClient.put(`/api/support/respond/${requestId}`, responseData);
         toast.success("Response submitted successfully");
         setState((prev) => ({
           ...prev,
