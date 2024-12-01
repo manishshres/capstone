@@ -27,7 +27,7 @@ const Shelters = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:3000/api/shelters?id=${id}`,
+          `http://localhost:3000/api/organization/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -46,11 +46,11 @@ const Shelters = () => {
   }, [id]);
 
   const getGoogleMapsUrl = (shelter) => {
-    if (shelter.latitude && shelter.longitude) {
-      return `https://www.google.com/maps/search/?api=1&query=${shelter.latitude},${shelter.longitude}`;
+    if (shelter.profile.latitude && shelter.profile.longitude) {
+      return `https://www.google.com/maps/search/?api=1&query=${shelter.profile.latitude},${shelter.profile.longitude}`;
     }
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      shelter.full_address
+      shelter.profile.full_address
     )}`;
   };
 
@@ -96,15 +96,15 @@ const Shelters = () => {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-semibold text-gray-800">
-                {shelter.name}
+                {shelter.profile.name}
               </h1>
               <p className="mt-1 text-sm text-gray-600 capitalize">
-                Type: {shelter.type || "General Shelter"}
+                Type: {shelter.profile.type || "General Shelter"}
               </p>
             </div>
-            {shelter.details_url && (
+            {shelter.profile.details_url && (
               <a
-                href={shelter.details_url}
+                href={shelter.profile.details_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
@@ -128,7 +128,7 @@ const Shelters = () => {
                 <p className="text-sm text-gray-600 flex items-start">
                   <MapPin className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
                   <span>
-                    {shelter.full_address}
+                    {shelter.profile.full_address}
                     <a
                       href={getGoogleMapsUrl(shelter)}
                       target="_blank"
@@ -140,23 +140,23 @@ const Shelters = () => {
                   </span>
                 </p>
 
-                {shelter.phone_number && (
+                {shelter.profile.phone_number && (
                   <p className="text-sm text-gray-600 flex items-center">
                     <Phone className="h-5 w-5 mr-2 text-gray-400" />
                     <a
-                      href={`tel:${shelter.phone_number}`}
+                      href={`tel:${shelter.profile.phone_number}`}
                       className="hover:text-blue-600"
                     >
-                      {shelter.phone_number}
+                      {shelter.profile.phone_number}
                     </a>
                   </p>
                 )}
 
-                {shelter.website && (
+                {shelter.profile.website && (
                   <p className="text-sm text-gray-600 flex items-center">
                     <Globe className="h-5 w-5 mr-2 text-gray-400" />
                     <a
-                      href={shelter.website}
+                      href={shelter.profile.website}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
@@ -166,23 +166,23 @@ const Shelters = () => {
                   </p>
                 )}
 
-                {shelter.email && (
+                {shelter.profile.email && (
                   <p className="text-sm text-gray-600 flex items-center">
                     <Mail className="h-5 w-5 mr-2 text-gray-400" />
                     <a
-                      href={`mailto:${shelter.email}`}
+                      href={`mailto:${shelter.profile.email}`}
                       className="text-blue-600 hover:underline"
                     >
-                      {shelter.email}
+                      {shelter.profile.email}
                     </a>
                   </p>
                 )}
 
-                {shelter.business_hours && (
+                {shelter.profile.business_hours && (
                   <p className="text-sm text-gray-600 flex items-start">
                     <Clock className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
                     <span className="whitespace-pre-line">
-                      {shelter.business_hours}
+                      {shelter.profile.business_hours}
                     </span>
                   </p>
                 )}
@@ -193,7 +193,7 @@ const Shelters = () => {
                   About
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {shelter.description || "No description available."}
+                  {shelter.profile.description || "No description available."}
                 </p>
               </div>
             </div>
@@ -203,7 +203,7 @@ const Shelters = () => {
           <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
             <button
               onClick={() =>
-                navigate(`/request-services?shelter=${shelter.id}`)
+                navigate(`/request-services?shelter=${shelter.profile.id}`)
               }
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >

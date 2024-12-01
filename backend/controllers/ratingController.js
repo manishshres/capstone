@@ -16,12 +16,7 @@ exports.createRating = async (req, res) => {
     );
     res.status(201).json({ message: "Rating created successfully", ratingId });
   } catch (error) {
-    if (
-      error.message.includes("Organization not found") ||
-      error.message.includes(
-        "You have not received support from this organization"
-      )
-    ) {
+    if (error.message.includes("Organization not found")) {
       res.status(400).json({ error: error.message });
     } else {
       res.status(500).json({ error: "Internal Server Error" });
@@ -63,6 +58,16 @@ exports.getRatings = async (req, res) => {
     const organizationId = req.params.id;
     const ratings = await ratingService.getRatings(organizationId);
     res.status(200).json(ratings);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.getAverageRating = async (req, res) => {
+  try {
+    const organizationId = req.params.id;
+    const averageRating = await ratingService.getAverageRating(organizationId);
+    res.status(200).json(averageRating);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }

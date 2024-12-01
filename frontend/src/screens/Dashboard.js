@@ -10,6 +10,7 @@ import {
   Phone,
   Globe,
   Navigation,
+  Star,
 } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { US_STATES } from "lib/states";
@@ -130,10 +131,7 @@ const Dashboard = () => {
       );
 
       setShelters(response.data);
-      // Save successful search to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(searchData));
-
-      // Update URL params
       setSearchParams({
         searchType,
         search: searchParam,
@@ -180,7 +178,6 @@ const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
           <h1 className="text-2xl font-semibold text-gray-800">
             Find Shelters Near You
@@ -190,7 +187,6 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Search Form */}
         <div className="p-6 border-b border-gray-200">
           <div className="mb-4">
             <div className="flex space-x-4">
@@ -364,7 +360,6 @@ const Dashboard = () => {
           </form>
         </div>
 
-        {/* Results */}
         <div className="p-6">
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
@@ -378,65 +373,183 @@ const Dashboard = () => {
             </div>
           ) : Array.isArray(shelters) && shelters.length > 0 ? (
             <div className="space-y-6">
-              {shelters.map((shelter) => (
-                <div
-                  key={shelter.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors duration-150"
-                >
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {shelter.name}
-                  </h3>
+              {shelters.map((shelter) => {
+                const ShelterCard = () => {
+                  console.log(shelter);
+                  const [shelterRating, setShelterRating] = useState(null);
+                  const [userRating, setUserRating] = useState(null);
+                  const [isSubmittingRating, setIsSubmittingRating] =
+                    useState(false);
 
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm text-gray-500 flex items-center">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {shelter.address}
-                    </p>
+                  useEffect(() => {
+                    const fetchRatings = async () => {
+                      try {
+                        const token = localStorage.getItem("token");
+                        const [averageResponse, ratingsResponse] =
+                          await Promise.all([
+                            axios.get(
+                              `http://localhost:3000/api/rating/org/${shelter.id}/average`,
+                              {
+                                headers: { Authorization: `Bearer ${token}` },
+                              }
+                            ),
+                            axios.get(
+                              `http://localhost:3000/api/rating/org/${shelter.id}`,
+                              {
+                                headers: { Authorization: `Bearer ${token}` },
+                              }
+                            ),
+                          ]);
 
-                    {shelter.phone && (
-                      <p className="text-sm text-gray-500 flex items-center">
-                        <Phone className="h-4 w-4 mr-2" />
-                        {shelter.phone}
-                      </p>
-                    )}
+                        setShelterRating(averageResponse.data);
+                        const userRating = ratingsResponse.data.find(
+                          (rating) => rating.userId === authState.user?.id
+                        );
+                        setUserRating(userRating);
+                      } catch (error) {
+                        console.error("Error fetching ratings:", error);
+                      }
+                    };
 
-                    {shelter.website && (
-                      <p className="text-sm text-gray-500 flex items-center">
-                        <Globe className="h-4 w-4 mr-2" />
-                        <a
-                          href={shelter.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          Website
-                        </a>
-                      </p>
-                    )}
-                  </div>
+                    fetchRatings();
+                  }, []);
 
-                  <div className="mt-4 flex justify-end space-x-4">
-                    {authState.user?.accountType === "user" && (
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/create-request-services?shelter=${shelter.id}`
-                          )
+                  const handleRatingSubmit = async (rating) => {
+                    try {
+                      setIsSubmittingRating(true);
+                      const token = localStorage.getItem("token");
+                      await axios.post(
+                        `http://localhost:3000/api/rating/${shelter.id}`,
+                        {
+                          organizationId: shelter.id,
+                          rating,
+                          comment: "",
+                        },
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
                         }
-                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      >
-                        Request Service
-                      </button>
-                    )}
-                    <button
-                      onClick={() => navigate(`/shelters/${shelter.id}`)}
-                      className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      );
+
+                      toast.success("Rating submitted successfully");
+                      const averageResponse = await axios.get(
+                        `http://localhost:3000/api/rating/org/${shelter.id}/average`,
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        }
+                      );
+                      setShelterRating(averageResponse.data);
+                      setUserRating({ rating });
+                    } catch (error) {
+                      console.error("Error submitting rating:", error);
+                      toast.error(
+                        error.response?.data?.error || "Failed to submit rating"
+                      );
+                    } finally {
+                      setIsSubmittingRating(false);
+                    }
+                  };
+
+                  return (
+                    <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors duration-150">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {shelter.name}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          {shelterRating && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Star className="h-4 w-4 text-yellow-400 mr-1 fill-current" />
+                              <span>{shelterRating.averageRating}</span>
+                              <span className="text-gray-400 ml-1">
+                                ({shelterRating.totalRatings})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 space-y-2">
+                        <p className="text-sm text-gray-500 flex items-center">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          {shelter.address}
+                        </p>
+
+                        {shelter.phone && (
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <Phone className="h-4 w-4 mr-2" />
+                            {shelter.phone}
+                          </p>
+                        )}
+
+                        {shelter.website && (
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <Globe className="h-4 w-4 mr-2" />
+                            <a
+                              href={shelter.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              Website
+                            </a>
+                          </p>
+                        )}
+
+                        {authState.user?.accountType === "user" && (
+                          <div className="flex items-center mt-2">
+                            <span className="text-sm text-gray-600 mr-2">
+                              Rate:
+                            </span>
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                              <button
+                                key={rating}
+                                onClick={() => handleRatingSubmit(rating)}
+                                disabled={isSubmittingRating}
+                                className={`p-1 ${
+                                  userRating?.rating === rating
+                                    ? "text-yellow-400"
+                                    : "text-gray-300 hover:text-yellow-400"
+                                }`}
+                              >
+                                <Star
+                                  className={`h-5 w-5 ${
+                                    userRating?.rating >= rating
+                                      ? "fill-current"
+                                      : ""
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex justify-end space-x-4">
+                        {authState.user?.accountType === "user" && (
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/create-request-services?shelter=${shelter.id}`
+                              )
+                            }
+                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                          >
+                            Request Service
+                          </button>
+                        )}
+                        <button
+                          onClick={() => navigate(`/shelters/${shelter.id}`)}
+                          className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  );
+                };
+
+                return <ShelterCard key={shelter.id} />;
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
