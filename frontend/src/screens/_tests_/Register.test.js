@@ -51,10 +51,10 @@ describe("Register Component", () => {
     fireEvent.click(screen.getByRole("button", { name: /Register/i }));
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith(
-        "http://localhost:3000/api/auth/register",
-        { email: "newuser@example.com", password: "newpassword123" }
-      );
+      expect(axios.post).toHaveBeenCalledWith("/api/auth/register", {
+        email: "newuser@example.com",
+        password: "newpassword123",
+      });
       expect(mockLogin).toHaveBeenCalledWith("fake-token");
       expect(screen.getByText(/Registration successful/i)).toBeInTheDocument();
     });

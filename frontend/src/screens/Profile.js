@@ -81,9 +81,7 @@ const Profile = () => {
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const url = isOrg
-          ? "http://localhost:3000/api/organization/profile"
-          : "http://localhost:3000/api/user/profile";
+        const url = isOrg ? "/api/organization/profile" : "/api/user/profile";
 
         const response = await axios.get(url, {
           headers: {
@@ -120,9 +118,7 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const url = isOrg
-        ? "http://localhost:3000/api/organization/profile"
-        : "http://localhost:3000/api/user/profile";
+      const url = isOrg ? "/api/organization/profile" : "/api/user/profile";
 
       await axios.put(url, formData, {
         headers: {

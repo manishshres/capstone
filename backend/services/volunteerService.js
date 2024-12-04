@@ -1,6 +1,16 @@
 const { connectToDatabase } = require("../config/mongoDbClient");
-const { ObjectId } = require("bson");
+// import { ObjectId } from "bson";
+const { ObjectId } = require("mongodb");
 
+const getObjectID = (jobId) => {
+  let objectId;
+  try {
+    objectId = ObjectId.createFromHexString(jobId);
+    return objectId;
+  } catch (error) {
+    throw new Error(`Invalid ObjectId format: ${jobId}`);
+  }
+};
 exports.createVolunteerJob = async (organizationId, jobData) => {
   const db = await connectToDatabase();
   const volunteerJobs = db.collection("volunteerJobs");
@@ -93,7 +103,7 @@ exports.updateVolunteerJob = async (jobId, jobData) => {
   };
 
   const result = await volunteerJobs.updateOne(
-    { _id: jobId },
+    { _id: getObjectID(jobId) },
     { $set: updateData }
   );
 
@@ -141,7 +151,7 @@ exports.getVolunteerJobById = async (jobId) => {
   const db = await connectToDatabase();
   const volunteerJobs = db.collection("volunteerJobs");
 
-  const job = await volunteerJobs.findOne({ _id: jobId });
+  const job = await volunteerJobs.findOne({ _id: getObjectID(jobId) });
   return job;
 };
 
@@ -171,7 +181,7 @@ exports.applyForJob = async (jobId, volunteerId, applicationData) => {
     };
 
     const result = await volunteerJobs.updateOne(
-      { _id: jobId },
+      { _id: getObjectID(jobId) },
       {
         $push: { applications: application },
         $inc: { "spots.available": -1, "spots.filled": 1 },
@@ -195,7 +205,7 @@ exports.updateApplicationStatus = async (jobId, volunteerId, status) => {
 
   const result = await volunteerJobs.updateOne(
     {
-      _id: jobId,
+      _id: getObjectID(jobId),
       "applications.volunteerId": volunteerId,
     },
     {
@@ -212,3 +222,4 @@ exports.updateApplicationStatus = async (jobId, volunteerId, status) => {
     modifiedCount: result.modifiedCount,
   };
 };
+

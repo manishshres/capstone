@@ -115,7 +115,7 @@ describe("Dashboard Component", () => {
 
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
-        "http://localhost:3000/api/shelters?search=Test City",
+        "/api/shelters?search=Test City",
         expect.objectContaining({
           headers: {
             Authorization: "Bearer mock-token",

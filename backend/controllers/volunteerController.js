@@ -1,9 +1,27 @@
 const volunteerService = require("../services/volunteerService");
 const { logger } = require("../utils/logger");
 
+exports.checkOrgAccount = (req, res, next) => {
+  if (req.user.accountType !== "org") {
+    return res.status(403).json({
+      error: "Only organization accounts can access this resource",
+    });
+  }
+  next();
+};
+
+exports.checkUserAccount = (req, res, next) => {
+  if (req.user.accountType !== "user") {
+    return res.status(403).json({
+      error: "Only users accounts can access this resource",
+    });
+  }
+  next();
+};
+
 exports.createVolunteerJob = async (req, res) => {
   try {
-    const organizationId = req.user.organizationId;
+    const organizationId = req.user.userId;
     const jobData = req.body;
 
     // Basic validation
@@ -39,7 +57,7 @@ exports.createVolunteerJob = async (req, res) => {
 exports.updateVolunteerJob = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const organizationId = req.user.organizationId;
+    const organizationId = req.user.userId;
     const jobData = req.body;
 
     // Verify ownership
@@ -158,7 +176,7 @@ exports.updateApplicationStatus = async (req, res) => {
   try {
     const { jobId, volunteerId } = req.params;
     const { status } = req.body;
-    const organizationId = req.user.organizationId;
+    const organizationId = req.user.userId;
 
     // Verify organization owns the job
     const job = await volunteerService.getVolunteerJobById(jobId);
@@ -217,7 +235,7 @@ exports.getMyApplications = async (req, res) => {
 
 exports.getOrganizationApplications = async (req, res) => {
   try {
-    const organizationId = req.user.organizationId;
+    const organizationId = req.user.userId;
     const { status, jobId } = req.query;
 
     const filters = {
@@ -267,7 +285,7 @@ exports.withdrawApplication = async (req, res) => {
 exports.getJobStats = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const organizationId = req.user.organizationId;
+    const organizationId = req.user.userId;
 
     // Verify organization owns the job
     const job = await volunteerService.getVolunteerJobById(jobId);

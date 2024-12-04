@@ -32,7 +32,7 @@ const CreateVolunteerJob = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:3000/api/organization/volunteer-jobs',
+        '/api/organization/volunteer-jobs',
         jobData,
         {
           headers: { Authorization: `Bearer ${token}` }

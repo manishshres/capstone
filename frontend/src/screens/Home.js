@@ -29,6 +29,9 @@ const Home = () => {
             </Link>
           </div>
         </div>
+        <div className="flex justify-center">
+          <img src="home.png" alt="Home image" />
+        </div>
       </div>
     </div>
   );

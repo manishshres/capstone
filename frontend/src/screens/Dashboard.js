@@ -122,9 +122,7 @@ const Dashboard = () => {
       }
 
       const response = await axios.get(
-        `http://localhost:3000/api/shelters?search=${encodeURIComponent(
-          searchParam
-        )}`,
+        `/api/shelters?search=${encodeURIComponent(searchParam)}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -387,18 +385,12 @@ const Dashboard = () => {
                         const token = localStorage.getItem("token");
                         const [averageResponse, ratingsResponse] =
                           await Promise.all([
-                            axios.get(
-                              `http://localhost:3000/api/rating/org/${shelter.id}/average`,
-                              {
-                                headers: { Authorization: `Bearer ${token}` },
-                              }
-                            ),
-                            axios.get(
-                              `http://localhost:3000/api/rating/org/${shelter.id}`,
-                              {
-                                headers: { Authorization: `Bearer ${token}` },
-                              }
-                            ),
+                            axios.get(`/api/rating/org/${shelter.id}/average`, {
+                              headers: { Authorization: `Bearer ${token}` },
+                            }),
+                            axios.get(`/api/rating/org/${shelter.id}`, {
+                              headers: { Authorization: `Bearer ${token}` },
+                            }),
                           ]);
 
                         setShelterRating(averageResponse.data);
@@ -419,7 +411,7 @@ const Dashboard = () => {
                       setIsSubmittingRating(true);
                       const token = localStorage.getItem("token");
                       await axios.post(
-                        `http://localhost:3000/api/rating/${shelter.id}`,
+                        `/api/rating/${shelter.id}`,
                         {
                           organizationId: shelter.id,
                           rating,
@@ -432,7 +424,7 @@ const Dashboard = () => {
 
                       toast.success("Rating submitted successfully");
                       const averageResponse = await axios.get(
-                        `http://localhost:3000/api/rating/org/${shelter.id}/average`,
+                        `/api/rating/org/${shelter.id}/average`,
                         {
                           headers: { Authorization: `Bearer ${token}` },
                         }

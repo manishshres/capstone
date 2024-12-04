@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { AuthContext } from "../contexts/AuthContext";
 
 // Constants
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "in-progress", label: "In Progress" },

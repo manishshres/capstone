@@ -14,14 +14,11 @@ const Inventory = () => {
     const fetchInventory = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:3000/api/organization/inventory",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await axios.get("/api/organization/inventory", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setDescription(response.data.description || "");
         setItems(response.data.items || []);
       } catch (error) {
@@ -65,7 +62,7 @@ const Inventory = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "http://localhost:3000/api/organization/inventory",
+        "/api/organization/inventory",
         {
           description,
           items,

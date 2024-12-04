@@ -7,6 +7,7 @@ import {
   Package,
   Clock,
   Settings,
+  ShieldPlus,
   LogOut,
   Home,
   Briefcase,
@@ -39,12 +40,12 @@ const Sidebar = () => {
   ];
 
   const orgMenuItems = [
-    {
-      name: "Services",
-      path: "/services",
-      icon: HandHelping,
-      show: isOrg,
-    },
+    // {
+    //   name: "Services",
+    //   path: "/services",
+    //   icon: HandHelping,
+    //   show: isOrg,
+    // },
     {
       name: "Inventory",
       path: "/inventory",
@@ -63,7 +64,7 @@ const Sidebar = () => {
     {
       name: "Add Services",
       path: "/add-request-services",
-      icon: HandHelping,
+      icon: ShieldPlus,
       show: isOrg,
     },
     {
@@ -86,19 +87,19 @@ const Sidebar = () => {
       name: "Available Jobs",
       path: "/volunteer/jobs",
       icon: Briefcase,
-      show: isVolunteer,
+      show: !isOrg,
     },
     {
       name: "My Applications",
       path: "/volunteer/applications",
       icon: FileCheck,
-      show: isVolunteer,
+      show: !isOrg,
     },
     {
       name: "My Schedule",
       path: "/volunteer/schedule",
       icon: CalendarCheck,
-      show: isVolunteer,
+      show: !isOrg,
     },
   ];
 

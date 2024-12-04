@@ -26,12 +26,9 @@ const Shelters = () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:3000/api/organization/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`/api/organization/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setShelter(response.data);
       } catch (error) {
         console.error("Error fetching shelter details:", error);

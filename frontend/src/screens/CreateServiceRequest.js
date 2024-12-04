@@ -50,12 +50,9 @@ const CreateServiceRequest = () => {
 
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:3000/api/organization/${orgId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`/api/organization/${orgId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         console.log("Raw service data:", response.data.services?.serviceList);
         setOrganization(response.data);
         console.log(response.data);
@@ -92,7 +89,7 @@ const CreateServiceRequest = () => {
       });
 
       await axios.post(
-        `http://localhost:3000/api/support/new-request`,
+        `/api/support/new-request`,
         {
           organizationId: organization.userId,
           serviceId: formData.service.id,

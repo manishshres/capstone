@@ -38,14 +38,11 @@ const Services = () => {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:3000/api/organization/services",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("/api/organization/services", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       // Handle both object and string array formats
       const serviceList = response.data.serviceList || [];
@@ -143,7 +140,7 @@ const Services = () => {
       const serviceList = services.map((service) => service.name);
 
       await axios.put(
-        "http://localhost:3000/api/organization/services",
+        "/api/organization/services",
         {
           description,
           serviceList: services,
