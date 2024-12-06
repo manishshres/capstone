@@ -1,9 +1,15 @@
 const shelterService = require("../services/shelterService");
 const { logger } = require("../utils/logger");
 
-const getShelters = async (req, res) => {
+exports.getShelters = async (req, res) => {
   try {
-    const { search, id } = req.query;
+    const { search, id, serviceNeeds, type, radius } = req.query;
+
+    const userPreferences = {
+      serviceNeeds: serviceNeeds ? serviceNeeds.split(",") : [],
+      type,
+      radius: radius ? parseFloat(radius) : 1.4,
+    };
 
     if (id) {
       const shelter = await shelterService.getShelterById(id);
@@ -13,7 +19,6 @@ const getShelters = async (req, res) => {
       return res.json(shelter);
     }
 
-    // Ensure search query is provided
     if (!search) {
       return res.status(400).json({ error: "Search parameter is required" });
     }
@@ -21,38 +26,45 @@ const getShelters = async (req, res) => {
     const trimmedSearch = search.trim();
     let shelters;
 
-    // Check if input is a zipcode (5 digit number)
     if (/^\d{5}$/.test(trimmedSearch)) {
-      shelters = await shelterService.getSheltersByZipcode(trimmedSearch);
-    }
-    // Check if input is lat,lng (two decimal numbers separated by comma)
-    else if (/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(trimmedSearch)) {
+      shelters = await shelterService.getSheltersByZipcode(
+        trimmedSearch,
+        userPreferences
+      );
+    } else if (/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(trimmedSearch)) {
       const [lat, lng] = trimmedSearch.split(",").map(Number);
-      shelters = await shelterService.getSheltersByLocation(lat, lng);
-    }
-    // Check if input is city, state (assumes format "City, State")
-    else if (/^([A-Za-z\s]+),\s*([A-Za-z\s]+)$/.test(trimmedSearch)) {
+      shelters = await shelterService.getSheltersByLocation(
+        lat,
+        lng,
+        userPreferences.radius,
+        userPreferences
+      );
+    } else if (/^([A-Za-z\s]+),\s*([A-Za-z\s]+)$/.test(trimmedSearch)) {
       const [city, state] = trimmedSearch.split(",").map((s) => s.trim());
-      shelters = await shelterService.getSheltersByStateCity(state, city);
-    }
-    // Invalid search format
-    else {
-      logger.error("Invalid search format: ", trimmedSearch);
+      shelters = await shelterService.getSheltersByStateCity(
+        state,
+        city,
+        userPreferences
+      );
+    } else {
       return res.status(400).json({
         error:
           "Invalid search format. Please use 'zipcode', 'lat,lng', or 'city,state'",
       });
     }
 
-    res.json(shelters);
+    res.json({
+      results: shelters,
+      count: shelters.length,
+      searchCriteria: {
+        search: trimmedSearch,
+        ...userPreferences,
+      },
+    });
   } catch (error) {
     logger.error("Error fetching shelters:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while fetching shelters" });
+    res.status(500).json({
+      error: "An error occurred while fetching shelters",
+    });
   }
-};
-
-module.exports = {
-  getShelters,
 };

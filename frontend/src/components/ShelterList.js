@@ -1,60 +1,67 @@
 import React from "react";
+import { Building2, Loader2 } from "lucide-react";
+import ShelterCard from "./ShelterCard";
 
-const ShelterList = ({ shelters, onShelterSelect }) => {
-  if (!Array.isArray(shelters) || shelters.length === 0) {
+const ShelterList = ({
+  isLoading,
+  error,
+  shelters = [],
+  userType,
+  userId,
+  searchType,
+}) => {
+  if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex cursor-pointer">
-          <div className="items-center justify-center p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
-              Please enter city,state or zipcode, to search for shelters.
-            </h3>
-          </div>
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Error</h3>
+        <p className="mt-1 text-sm text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  if (!shelters || shelters.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">
+          No shelters found
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          {searchType
+            ? "Try adjusting your search criteria"
+            : "Start by searching for shelters in your area"}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {shelters.map((shelter) => (
-        <div
-          key={shelter.name.replace(/\s/g, "")}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out flex cursor-pointer"
-          onClick={() => onShelterSelect(shelter)}
-        >
-          <div className="w-[150px] h-full flex-shrink-0 flex items-center justify-center ">
-            <div className="w-[150px] h-[150px] overflow-hidden my-2 ml-4 rounded-md">
-              <img
-                src={
-                  shelter.photo_urls[0] ||
-                  "/placeholder.svg?height=150&width=150"
-                }
-                alt={shelter.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          <div className="p-5 flex-grow">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
-              {shelter.name}
-            </h3>
-            <p className="text-sm text-gray-500 mb-1">{shelter.address}</p>
-            <p className="text-sm text-gray-500 mb-2">
-              {shelter.city}, {shelter.state} {shelter.zip_code}
-            </p>
-            <p className="text-sm text-gray-600 mb-2">{shelter.phone_number}</p>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs text-gray-500">
-                Last updated:{" "}
-                {new Date(shelter.update_datetime).toLocaleDateString()}
-              </span>
-              <span className="text-xs text-[#5d7598] hover:text-[#427acd]">
-                View Details →
-              </span>
-            </div>
-          </div>
-        </div>
-      ))}
+    <div className="space-y-6">
+      {/* Optional Results Summary */}
+      <div className="text-sm text-gray-600">
+        Found {shelters.length} result{shelters.length !== 1 ? "s" : ""}
+      </div>
+
+      {/* Shelter Cards */}
+      <div className="space-y-6">
+        {shelters.map((shelter) => (
+          <ShelterCard
+            key={shelter.id}
+            shelter={shelter}
+            userType={userType}
+            userId={userId}
+          />
+        ))}
+      </div>
     </div>
   );
 };
