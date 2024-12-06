@@ -1,0 +1,120 @@
+{
+  "app": {
+    "title": "Capestone",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar sesión",
+    "register": "Registrate"
+  },
+  "home": {
+    "heading": "Bienvenido a Home Shelter Finder",
+    "subheading": "Descubra funciones y servicios increíbles. ¡Únase a nuestra comunidad hoy mismo!",
+    "login": "Iniciar sesión",
+    "register": "Registrate"
+  },
+  "login": {
+    "title": "Iniciar sesión",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "loginButton": "Iniciar sesión",
+    "registerButton": "¿No tienes una cuenta? Regístrate aquí",
+    "error": "Credenciales de inicio de sesión inválidas",
+    "success": "¡Inicio de sesión exitoso!",
+    "loggingIn": "Iniciando sesión..."
+  },
+  "register": {
+    "title": "Registrarse",
+    "nameLabel": "Nombre",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "accountTypeLabel": "Tipo de cuenta",
+    "userOption": "Usuario",
+    "orgOption": "Organización",
+    "registerButton": "Registrarse",
+    "registering": "Registrando...",
+    "loginLink": "¿Ya tienes una cuenta? Inicia sesión aquí",
+    "successMessage": "¡Cuenta creada con éxito!",
+    "errorMessage": "Ocurrió un error durante el registro"
+  },
+  "forgotPassword": {
+    "title": "Restablecer contraseña",
+    "emailLabel": "Correo electrónico",
+    "sendInstructions": "Enviar instrucciones de restablecimiento",
+    "sending": "Enviando...",
+    "successMessage": "¡Instrucciones de restablecimiento enviadas con éxito!",
+    "errorMessage": "No se pudieron enviar las instrucciones de restablecimiento"
+  },
+  "changePassword": {
+    "heading": "Cambiar contraseña",
+    "currentPasswordLabel": "Contraseña actual",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar nueva contraseña",
+    "updating": "Actualizando...",
+    "updatePassword": "Actualizar contraseña",
+    "passwordsMismatch": "Las nuevas contraseñas no coinciden",
+    "changeSuccess": "Contraseña cambiada con éxito",
+    "changeFailed": "No se pudo cambiar la contraseña"
+  },
+  "sidebar": {
+    "dashboard": "Tablero",
+    "profile": "Perfil",
+    "addServices": "Agregar Servicios",
+    "createRequest": "Crear Solicitud",
+    "viewServices": "Ver Servicios",
+    "availableOpportunities": "Oportunidades Disponibles",
+    "myApplications": "Mis Solicitudes",
+    "postedOpportunities": "Oportunidades Publicadas",
+    "createOpportunity": "Crear Oportunidad",
+    "manageApplications": "Gestionar Solicitudes",
+    "manageVolunteers": "Gestionar Voluntarios",
+    "manageInventory": "Gestionar Inventario",
+    "menu": "Menú",
+    "communityServices": "Servicios Comunitarios",
+    "volunteerOpportunities": "Oportunidades de Voluntariado",
+    "organizationManagement": "Gestión de la Organización",
+    "organizationPortal": "Portal de la Organización",
+    "volunteerPortal": "Portal de Voluntarios",
+    "userPortal": "Portal de Usuarios",
+    "logout": "Cerrar Sesión"
+  },
+  "dashboard": {
+    "heading": "Encuentra refugios cerca de ti",
+    "subheading": "Busca por código postal, ciudad y estado, o usa tu ubicación actual",
+    "searchByZip": "Código Postal",
+    "searchByCityState": "Ciudad y Estado",
+    "currentLocation": "Ubicación Actual",
+    "zipError": "Por favor, ingresa un código postal válido de 5 dígitos",
+    "cityStateError": "Por favor, ingresa la ciudad y el estado",
+    "locationError": "Se requieren las coordenadas de ubicación",
+    "noSheltersFound": "No se encontraron refugios",
+    "tryDifferentLocation": "Intenta buscar en una ubicación diferente"
+  },
+  "profile": {
+    "title": "Perfil",
+    "description": "Actualiza la información de tu perfil y configuración de la cuenta",
+    "user": "Usuario",
+    "org": "Organización",
+    "nameLabel": "Nombre",
+    "typeLabel": "Tipo de Organización",
+    "selectType": "Seleccionar tipo...",
+    "shelterOption": "Refugio",
+    "foodBankOption": "Banco de Alimentos",
+    "addressLabel": "Dirección",
+    "streetLabel": "Calle",
+    "cityLabel": "Ciudad",
+    "stateLabel": "Estado",
+    "zipLabel": "Código Postal",
+    "phoneLabel": "Teléfono",
+    "latitude": "Latitud",
+    "longitude": "Longitud",
+    "emailLabel": "Correo Electrónico",
+    "websiteLabel": "Sitio Web",
+    "saving": "Guardando...",
+    "saveButton": "Guardar Cambios",
+    "successSaving": "Perfil actualizado con éxito.",
+    "errorSaving": "No se pudo actualizar el perfil. Por favor, inténtalo de nuevo.",
+    "errorFetching": "No se pudo cargar los datos de {{type}}. Por favor, inténtalo de nuevo."
+  },
+  "footer": {
+    "copyright": "© 2024 Capestone. Todos los derechos reservados."
+  }
+}

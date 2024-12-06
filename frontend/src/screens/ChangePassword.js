@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const ChangePassword = () => {
   const [passwords, setPasswords] = useState({
@@ -15,12 +16,13 @@ export const ChangePassword = () => {
     confirm: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (passwords.newPassword !== passwords.confirmPassword) {
-      toast.error("New passwords do not match");
+      toast.error(t("changePassword.passwordsMismatch"));
       return;
     }
 
@@ -45,7 +47,7 @@ export const ChangePassword = () => {
         confirmPassword: "",
       });
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to change password");
+      toast.success(t("changePassword.changeSuccess"));
     } finally {
       setIsSubmitting(false);
     }
@@ -60,11 +62,11 @@ export const ChangePassword = () => {
 
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">Change Password</h2>
+      <h2 className="text-2xl font-bold mb-6">{t("changePassword.heading")}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Current Password
+            {t("changePassword.currentPasswordLabel")}
           </label>
           <div className="relative">
             <input
@@ -91,7 +93,7 @@ export const ChangePassword = () => {
 
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            New Password
+            {t("changePassword.newPasswordLabel")}
           </label>
           <div className="relative">
             <input
@@ -118,7 +120,7 @@ export const ChangePassword = () => {
 
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Confirm New Password
+            {t("changePassword.confirmPasswordLabel")}
           </label>
           <div className="relative">
             <input
@@ -151,7 +153,9 @@ export const ChangePassword = () => {
           {isSubmitting && (
             <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
           )}
-          {isSubmitting ? "Updating..." : "Update Password"}
+          {isSubmitting
+            ? t("changePassword.updating")
+            : t("changePassword.updatePassword")}
         </button>
       </form>
     </div>

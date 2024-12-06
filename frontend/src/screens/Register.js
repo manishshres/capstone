@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -13,6 +14,7 @@ const Register = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,11 +30,11 @@ const Register = () => {
       });
 
       login(response.data.token);
-      setSuccessMessage("Account created successfully!");
+      setSuccessMessage(t("register.successMessage"));
       setIsLoading(false);
       setTimeout(() => {
         navigate("/dashboard");
-      }, 650); // Redirect to dashboard
+      }, 650);
     } catch (err) {
       setIsLoading(false);
       if (err.response) {
@@ -42,7 +44,7 @@ const Register = () => {
           setErrors(err.response.data);
         }
       } else {
-        setErrors({ general: "An error occurred during registration" });
+        setErrors({ general: t("register.errorMessage") });
       }
     }
   };
@@ -50,7 +52,7 @@ const Register = () => {
   return (
     <div className="max-w-md mx-auto mt-10 px-4 sm:px-6 lg:px-8">
       <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-        Register
+        {t("register.title")}
       </h2>
       {successMessage && (
         <div
@@ -74,7 +76,7 @@ const Register = () => {
             htmlFor="name"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Name
+            {t("register.nameLabel")}
           </label>
           <input
             id="name"
@@ -94,7 +96,7 @@ const Register = () => {
             htmlFor="email"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Email address
+            {t("register.emailLabel")}
           </label>
           <input
             id="email"
@@ -115,7 +117,7 @@ const Register = () => {
             htmlFor="password"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Password
+            {t("register.passwordLabel")}
           </label>
           <input
             id="password"
@@ -136,7 +138,7 @@ const Register = () => {
             htmlFor="accountType"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Account Type
+            {t("register.accountTypeLabel")}
           </label>
           <select
             id="accountType"
@@ -145,8 +147,8 @@ const Register = () => {
             onChange={(e) => setAccountType(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-glaucous-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron focus:border-saffron"
           >
-            <option value="user">User</option>
-            <option value="org">Organization</option>
+            <option value="user">{t("register.userOption")}</option>
+            <option value="org">{t("register.orgOption")}</option>
           </select>
           {errors.accountType && (
             <p className="mt-2 text-sm text-red-600">{errors.accountType}</p>
@@ -158,7 +160,9 @@ const Register = () => {
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-glaucous hover:bg-glaucous-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-glaucous"
             disabled={isLoading}
           >
-            {isLoading ? "Registering..." : "Register"}
+            {isLoading
+              ? t("register.registering")
+              : t("register.registerButton")}
           </button>
         </div>
       </form>
@@ -167,7 +171,7 @@ const Register = () => {
           to="/login"
           className="text-sm text-glaucous-600 hover:text-glaucous-800"
         >
-          Already have an account? Login here
+          {t("register.loginLink")}
         </Link>
       </div>
     </div>

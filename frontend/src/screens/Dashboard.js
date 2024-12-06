@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { US_STATES } from "lib/states";
+import { useTranslation } from "react-i18next";
 
 const STORAGE_KEY = "dashboard_search_state";
 
@@ -26,6 +27,8 @@ const SearchTypes = {
 const Dashboard = () => {
   const { authState } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // State
@@ -78,21 +81,21 @@ const Dashboard = () => {
     switch (searchType) {
       case SearchTypes.ZIPCODE:
         if (!/^\d{5}$/.test(searchData.zipcode)) {
-          setError("Please enter a valid 5-digit ZIP code");
+          setError(t("dashboard.zipError"));
           return false;
         }
         break;
 
       case SearchTypes.CITY_STATE:
         if (!searchData.city || !searchData.state) {
-          setError("Please enter both city and state");
+          setError(t("dashboard.cityStateError"));
           return false;
         }
         break;
 
       case SearchTypes.LOCATION:
         if (!searchData.lat || !searchData.lng) {
-          setError("Location coordinates are required");
+          setError(t("dashboard.locationError"));
           return false;
         }
         break;
@@ -178,10 +181,10 @@ const Dashboard = () => {
       <div className="bg-white rounded-lg shadow-md">
         <div className="px-6 py-4 border-b border-gray-200">
           <h1 className="text-2xl font-semibold text-gray-800">
-            Find Shelters Near You
+            {t("dashboard.heading")}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Search by ZIP code, city and state, or use your current location
+            {t("dashboard.subheading")}
           </p>
         </div>
 
@@ -196,7 +199,7 @@ const Dashboard = () => {
                     : "bg-gray-100 text-gray-700"
                 }`}
               >
-                ZIP Code
+                {t("dashboard.searchByZip")}
               </button>
               <button
                 onClick={() => setSearchType(SearchTypes.CITY_STATE)}
@@ -206,7 +209,7 @@ const Dashboard = () => {
                     : "bg-gray-100 text-gray-700"
                 }`}
               >
-                City & State
+                {t("dashboard.searchByCityState")}
               </button>
               <button
                 onClick={handleUseCurrentLocation}
@@ -217,7 +220,7 @@ const Dashboard = () => {
                 }`}
               >
                 <Navigation className="w-4 h-4 mr-2" />
-                Current Location
+                {t("dashboard.currentLocation")}
               </button>
             </div>
           </div>
@@ -547,10 +550,10 @@ const Dashboard = () => {
             <div className="text-center py-12">
               <Building2 className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No shelters found
+                {t("dashboard.noSheltersFound")}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Try searching in a different location
+                {t("dashboard.tryDifferentLocation")}
               </p>
             </div>
           )}

@@ -1,0 +1,120 @@
+{
+  "app": {
+    "title": "Capestone",
+    "logout": "Logout",
+    "login": "Log In",
+    "register": "Register"
+  },
+  "home": {
+    "heading": "Welcome to Home Shelter Finder",
+    "subheading": "Discover amazing features and services. Join our community today!",
+    "login": "Login",
+    "register": "Register"
+  },
+  "login": {
+    "title": "Login",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "loginButton": "Login",
+    "registerButton": "Don't have an account? Register here",
+    "error": "Invalid login credentials",
+    "success": "Logged in successfully!",
+    "loggingIn": "Logging in..."
+  },
+  "register": {
+    "title": "Register",
+    "nameLabel": "Name",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "accountTypeLabel": "Account Type",
+    "userOption": "User",
+    "orgOption": "Organization",
+    "registerButton": "Register",
+    "registering": "Registering...",
+    "loginLink": "Already have an account? Login here",
+    "successMessage": "Account created successfully!",
+    "errorMessage": "An error occurred during registration"
+  },
+  "forgotPassword": {
+    "title": "Reset Password",
+    "emailLabel": "Email Address",
+    "sendInstructions": "Send Reset Instructions",
+    "sending": "Sending...",
+    "successMessage": "Reset instructions sent successfully!",
+    "errorMessage": "Failed to send reset instructions"
+  },
+  "changePassword": {
+    "heading": "Change Password",
+    "currentPasswordLabel": "Current Password",
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "updating": "Updating...",
+    "updatePassword": "Update Password",
+    "passwordsMismatch": "New passwords do not match",
+    "changeSuccess": "Password changed successfully",
+    "changeFailed": "Failed to change password"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "addServices": "Add Services",
+    "createRequest": "Create Request",
+    "viewServices": "View Services",
+    "availableOpportunities": "Available Opportunities",
+    "myApplications": "My Applications",
+    "postedOpportunities": "Posted Opportunities",
+    "createOpportunity": "Create Opportunity",
+    "manageApplications": "Manage Applications",
+    "manageVolunteers": "Manage Volunteers",
+    "manageInventory": "Manage Inventory",
+    "menu": "Menu",
+    "communityServices": "Community Services",
+    "volunteerOpportunities": "Volunteer Opportunities",
+    "organizationManagement": "Organization Management",
+    "organizationPortal": "Organization Portal",
+    "volunteerPortal": "Volunteer Portal",
+    "userPortal": "User Portal",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "heading": "Find Shelters Near You",
+    "subheading": "Search by ZIP code, city and state, or use your current location",
+    "searchByZip": "ZIP Code",
+    "searchByCityState": "City & State",
+    "currentLocation": "Current Location",
+    "zipError": "Please enter a valid 5-digit ZIP code",
+    "cityStateError": "Please enter both city and state",
+    "locationError": "Location coordinates are required",
+    "noSheltersFound": "No shelters found",
+    "tryDifferentLocation": "Try searching in a different location"
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Update your profile information and account settings",
+    "user": "User",
+    "org": "Organization",
+    "nameLabel": "Name",
+    "typeLabel": "Organization Type",
+    "selectType": "Select type...",
+    "shelterOption": "Shelter",
+    "foodBankOption": "Food Bank",
+    "addressLabel": "Address",
+    "streetLabel": "Address 2",
+    "cityLabel": "City",
+    "stateLabel": "State",
+    "zipLabel": "Zipcode",
+    "phoneLabel": "Phone Number",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "emailLabel": "Email Address",
+    "websiteLabel": "Website",
+    "saving": "Saving...",
+    "saveButton": "Save Changes",
+    "successSaving": "Profile updated successfully.",
+    "errorSaving": "Failed to update profile. Please try again.",
+    "errorFetching": "Failed to load {{type}} data. Please try again."
+  },
+  "footer": {
+    "copyright": "© 2024 Capestone. All rights reserved."
+  }
+}

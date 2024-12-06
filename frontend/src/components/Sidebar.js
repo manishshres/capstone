@@ -5,34 +5,34 @@ import {
   UserCircle,
   HandHelping,
   Package,
-  Clock,
   LogOut,
   Home,
   Briefcase,
   Users,
-  CalendarCheck,
   FileCheck,
   Building2,
   PlusCircle,
-  Settings,
   ShieldPlus,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Sidebar = () => {
   const { authState, logout } = useContext(AuthContext);
+  const { t } = useTranslation();
+
   const isOrg = authState.user && authState.user.accountType === "org";
   const isVolunteer =
     authState.user && authState.user.accountType === "volunteer";
 
   const baseMenuItems = [
     {
-      name: "Dashboard",
+      name: t("sidebar.dashboard"),
       path: "/dashboard",
       icon: Home,
       show: true,
     },
     {
-      name: "Profile",
+      name: t("sidebar.profile"),
       path: "/profile",
       icon: UserCircle,
       show: true,
@@ -41,19 +41,19 @@ const Sidebar = () => {
 
   const servicesMenuItems = [
     {
-      name: "Add Services",
+      name: t("sidebar.addServices"),
       path: "/add-request-services",
       icon: ShieldPlus,
       show: isOrg,
     },
     {
-      name: "Create Request",
+      name: t("sidebar.createRequest"),
       path: "/create-request-services",
       icon: HandHelping,
       show: !isOrg,
     },
     {
-      name: "View Services",
+      name: t("sidebar.viewServices"),
       path: "/view-request-services",
       icon: HandHelping,
       show: true,
@@ -62,52 +62,46 @@ const Sidebar = () => {
 
   const volunteerSection = [
     {
-      name: "Available Opportunities",
+      name: t("sidebar.availableOpportunities"),
       path: "/volunteer/jobs",
       icon: Briefcase,
       show: !isOrg,
     },
     {
-      name: "My Applications",
+      name: t("sidebar.myApplications"),
       path: "/volunteer/applications",
       icon: FileCheck,
       show: !isOrg,
     },
-    // {
-    //   name: "My Schedule",
-    //   path: "/volunteer/schedule",
-    //   icon: CalendarCheck,
-    //   show: !isOrg,
-    // },
   ];
 
   const orgManagementSection = [
     {
-      name: "Posted Opportunities",
+      name: t("sidebar.postedOpportunities"),
       path: "/volunteer/jobs",
       icon: Briefcase,
       show: isOrg,
     },
     {
-      name: "Create Opportunity",
+      name: t("sidebar.createOpportunity"),
       path: "/volunteer-jobs/create",
       icon: PlusCircle,
       show: isOrg,
     },
     {
-      name: "Manage Applications",
+      name: t("sidebar.manageApplications"),
       path: "/organization/applications",
       icon: FileCheck,
       show: isOrg,
     },
     {
-      name: "Manage Volunteers",
+      name: t("sidebar.manageVolunteers"),
       path: "/organization/volunteers",
       icon: Users,
       show: isOrg,
     },
     {
-      name: "Manage Inventory",
+      name: t("sidebar.manageInventory"),
       path: "/inventory",
       icon: Package,
       show: isOrg,
@@ -154,21 +148,27 @@ const Sidebar = () => {
           <Building2 className="h-6 w-6 text-blue-600" />
           <h2 className="ml-2 text-xl font-semibold text-gray-800">
             {isOrg
-              ? "Organization Portal"
+              ? t("sidebar.organizationPortal")
               : isVolunteer
-              ? "Volunteer Portal"
-              : "User Portal"}
+              ? t("sidebar.volunteerPortal")
+              : t("sidebar.userPortal")}
           </h2>
         </div>
         <p className="mt-1 text-sm text-gray-500">{authState.user?.email}</p>
       </div>
 
       <nav className="flex-grow px-2 py-2 overflow-y-auto bg-white">
-        {renderSection("Menu", baseMenuItems)}
-        {renderSection("Community Services", servicesMenuItems)}
+        {renderSection(t("sidebar.menu"), baseMenuItems)}
+        {renderSection(t("sidebar.communityServices"), servicesMenuItems)}
         {isOrg
-          ? renderSection("Organization Management", orgManagementSection)
-          : renderSection("Volunteer Opportunities", volunteerSection)}
+          ? renderSection(
+              t("sidebar.organizationManagement"),
+              orgManagementSection
+            )
+          : renderSection(
+              t("sidebar.volunteerOpportunities"),
+              volunteerSection
+            )}
       </nav>
 
       <div className="p-4 border-t border-gray-200 bg-white">
@@ -177,7 +177,7 @@ const Sidebar = () => {
           className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150 ease-in-out group"
         >
           <LogOut className="mr-3 h-5 w-5 group-hover:text-red-700" />
-          Logout
+          {t("sidebar.logout")}
         </button>
       </div>
     </div>

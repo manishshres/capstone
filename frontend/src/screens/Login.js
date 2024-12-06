@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ const Login = () => {
 
       // Use the login method from AuthContext
       login(response.data.token);
-      toast.success("Logged in successfully!", {
+      toast.success(t("login.success"), {
         position: "top-center",
         autoClose: 1500,
         hideProgressBar: false,
@@ -47,16 +49,14 @@ const Login = () => {
     } catch (err) {
       setIsLoading(false);
       if (err.response) {
-        setErrors({ general: err.response.data.error });
-      } else {
-        setErrors({ general: "An error occurred during login" });
+        setErrors({ general: t("login.error") });
       }
     }
   };
   return (
     <div className="max-w-md mx-auto mt-10 px-4 sm:px-6 lg:px-8">
       <h2 className="text-3xl font-extrabold text-center text-black mb-6">
-        Login
+        {t("login.title")}
       </h2>
       {errors.general && (
         <div
@@ -72,7 +72,7 @@ const Login = () => {
             htmlFor="email"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Email address
+            {t("login.emailLabel")}
           </label>
           <input
             id="email"
@@ -93,7 +93,7 @@ const Login = () => {
             htmlFor="password"
             className="block text-sm font-medium text-glaucous-700"
           >
-            Password
+            {t("login.passwordLabel")}
           </label>
           <input
             id="password"
@@ -115,7 +115,7 @@ const Login = () => {
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-glaucous hover:bg-glaucous-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-glaucous"
             disabled={isLoading}
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? t("login.loggingIn") : t("login.loginButton")}
           </button>
         </div>
       </form>
@@ -124,7 +124,7 @@ const Login = () => {
           to="/register"
           className="text-sm text-glaucous-600 hover:text-glaucous-800"
         >
-          Don't have an account? Register here
+          {t("login.registerButton")}
         </Link>
       </div>
     </div>
