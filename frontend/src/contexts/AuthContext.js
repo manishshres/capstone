@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode"; // Import the jwt-decode library
+import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext();
 
@@ -8,49 +8,64 @@ const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState({
     token: localStorage.getItem("token"),
     isAuthenticated: false,
-    user: {},
+    user: null,
+    isLoading: true,
   });
 
+  const validateToken = async (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+
+      if (decoded.exp < currentTime) {
+        throw new Error("Token expired");
+      }
+
+      // Set auth state with decoded token info
+      setAuthState({
+        token,
+        isAuthenticated: true,
+        user: {
+          userId: decoded.userId,
+          email: decoded.email,
+          accountType: decoded.accountType,
+        },
+        isLoading: false,
+      });
+
+      // Optionally verify with backend
+      await axios.get("/api/auth", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      localStorage.removeItem("token");
+      setAuthState({
+        token: null,
+        isAuthenticated: false,
+        user: null,
+        isLoading: false,
+      });
+    }
+  };
+
   useEffect(() => {
-    const checkAuth = async () => {
-      if (authState.token) {
-        try {
-          const response = await axios.get("http://localhost:3000/api/auth", {
-            headers: {
-              Authorization: `Bearer ${authState.token}`,
-            },
-          });
-          setAuthState({
-            ...authState,
-            isAuthenticated: true,
-            user: response.data.user,
-          });
-        } catch (err) {
-          localStorage.removeItem("token");
-          setAuthState({
-            token: null,
-            isAuthenticated: false,
-            user: null,
-          });
-        }
+    const initAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await validateToken(token);
+      } else {
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
       }
     };
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const login = (token) => {
+    initAuth();
+  }, []); // Empty dependency array
+
+  const login = async (token) => {
     localStorage.setItem("token", token);
-    const decodedToken = jwtDecode(token); // Decode the token
-    setAuthState({
-      ...authState,
-      token,
-      isAuthenticated: true,
-      user: {
-        email: decodedToken.email,
-        accountType: decodedToken.accountType, // Extract the email from the decoded token
-      },
-    });
+    await validateToken(token);
   };
 
   const logout = () => {
@@ -59,11 +74,20 @@ const AuthProvider = ({ children }) => {
       token: null,
       isAuthenticated: false,
       user: null,
+      isLoading: false,
     });
   };
 
+  if (authState.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ authState, setAuthState, login, logout }}>
+    <AuthContext.Provider value={{ authState, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

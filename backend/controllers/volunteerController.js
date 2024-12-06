@@ -132,11 +132,35 @@ exports.getVolunteerJobById = async (req, res) => {
   }
 };
 
+exports.getPostedVolunteerJobs = async (req, res) => {
+  try {
+    const organizationId = req.user.userId;
+
+    const jobs = await volunteerService.getPostedVolunteerJobs(organizationId);
+
+    res.json({
+      jobs,
+      count: jobs.length,
+    });
+  } catch (error) {
+    logger.error("Error fetching posted volunteer jobs:", error);
+    res.status(500).json({
+      error: "Failed to fetch volunteer jobs",
+    });
+  }
+};
+
 exports.applyForJob = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const volunteerId = req.user.id;
+    const volunteerId = req.user.userId;
     const applicationData = req.body;
+    console.log("Controller - User ID from token:", req.user);
+    console.log("Controller - Volunteer ID being used:", volunteerId);
+
+    console.log(applicationData);
+    console.log(volunteerId);
+    console.log(jobId);
 
     // Check if job exists and has spots available
     const job = await volunteerService.getVolunteerJobById(jobId);
@@ -219,7 +243,7 @@ exports.updateApplicationStatus = async (req, res) => {
 
 exports.getMyApplications = async (req, res) => {
   try {
-    const volunteerId = req.user.id;
+    const volunteerId = req.user.userId;
     const applications = await volunteerService.getVolunteerApplications(
       volunteerId
     );
@@ -260,7 +284,7 @@ exports.getOrganizationApplications = async (req, res) => {
 exports.withdrawApplication = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const volunteerId = req.user.id;
+    const volunteerId = req.user.userId;
 
     const result = await volunteerService.withdrawApplication(
       jobId,
@@ -300,6 +324,57 @@ exports.getJobStats = async (req, res) => {
     logger.error("Error fetching job stats:", error);
     res.status(500).json({
       error: "Failed to fetch job statistics",
+    });
+  }
+};
+
+exports.getOrganizationVolunteers = async (req, res) => {
+  try {
+    const organizationId = req.user.userId;
+    const volunteers = await volunteerService.getOrganizationVolunteers(
+      organizationId
+    );
+
+    res.json({
+      volunteers,
+      count: volunteers.length,
+    });
+  } catch (error) {
+    logger.error("Error fetching organization volunteers:", error);
+    res.status(500).json({
+      error: "Failed to fetch volunteers",
+    });
+  }
+};
+
+exports.updateVolunteerHours = async (req, res) => {
+  try {
+    const { jobId, volunteerId } = req.params;
+    const { hours } = req.body;
+    const organizationId = req.user.userId;
+
+    // Verify organization owns the job
+    const job = await volunteerService.getVolunteerJobById(jobId);
+    if (!job || job.organizationId !== organizationId) {
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to update volunteer hours" });
+    }
+
+    const result = await volunteerService.updateVolunteerHours(
+      jobId,
+      volunteerId,
+      hours
+    );
+
+    res.json({
+      message: "Volunteer hours updated successfully",
+      result,
+    });
+  } catch (error) {
+    logger.error("Error updating volunteer hours:", error);
+    res.status(500).json({
+      error: "Failed to update volunteer hours",
     });
   }
 };

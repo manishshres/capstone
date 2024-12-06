@@ -98,3 +98,66 @@ exports.login = async (email, password) => {
     return { error: error.message };
   }
 };
+
+// Reset password (send reset email)
+exports.resetPassword = async (email) => {
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL}/reset-password`,
+    });
+
+    if (error) throw new Error(error.message);
+
+    return { success: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+// Change password
+exports.changePassword = async (userId, currentPassword, newPassword) => {
+  try {
+    // First verify current password
+    const { data: userData, error: userError } =
+      await supabase.auth.signInWithPassword({
+        email: email,
+        password: currentPassword,
+      });
+
+    if (userError) throw new Error("Current password is incorrect");
+
+    // Update password
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) throw new Error(error.message);
+
+    // Update MongoDB timestamp
+    const db = await connectToDatabase();
+    const users = db.collection("users");
+    await users.updateOne(
+      { _id: userId },
+      { $set: { updated_at: new Date() } }
+    );
+
+    return { success: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+// Update password with token (after reset)
+exports.updatePasswordWithToken = async (newPassword) => {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) throw new Error(error.message);
+
+    return { success: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+};

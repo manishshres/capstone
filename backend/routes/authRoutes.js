@@ -13,4 +13,12 @@ router.post("/register", authController.register);
 // POST request for logging in a user
 router.post("/login", authController.login);
 
+router.post("/reset-password", authController.resetPassword);
+router.post(
+  "/change-password",
+  authenticateToken,
+  authController.changePassword
+);
+router.post("/update-password", authController.updatePasswordWithToken);
+
 module.exports = router;

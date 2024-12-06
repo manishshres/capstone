@@ -105,3 +105,76 @@ exports.authStatus = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    logger.info(`Password reset requested for email: ${email}`);
+
+    const result = await authService.resetPassword(email);
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.status(200).json({
+      message: "Password reset instructions sent to your email",
+    });
+  } catch (error) {
+    logger.error("Password reset error:", error);
+    res.status(500).json({ error: "Failed to process password reset" });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Both current and new password are required" });
+    }
+
+    const result = await authService.changePassword(
+      userId,
+      currentPassword,
+      newPassword
+    );
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    logger.error("Password change error:", error);
+    res.status(500).json({ error: "Failed to change password" });
+  }
+};
+
+exports.updatePasswordWithToken = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ error: "New password is required" });
+    }
+
+    const result = await authService.updatePasswordWithToken(newPassword);
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    logger.error("Password reset completion error:", error);
+    res.status(500).json({ error: "Failed to update password" });
+  }
+};

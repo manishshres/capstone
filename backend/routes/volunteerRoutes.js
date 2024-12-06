@@ -32,6 +32,13 @@ router.delete(
 );
 
 // Organization routes
+router.get(
+  "/organization/jobs",
+  authenticateToken,
+  volunteerController.checkOrgAccount,
+  volunteerController.getPostedVolunteerJobs
+);
+
 router.post(
   "/jobs",
   authenticateToken,
@@ -64,6 +71,20 @@ router.get(
   authenticateToken,
   volunteerController.checkOrgAccount,
   volunteerController.getJobStats
+);
+
+router.get(
+  "/organization/volunteers",
+  authenticateToken,
+  volunteerController.checkOrgAccount,
+  volunteerController.getOrganizationVolunteers
+);
+
+router.put(
+  "/jobs/:jobId/volunteers/:volunteerId/hours",
+  authenticateToken,
+  volunteerController.checkOrgAccount,
+  volunteerController.updateVolunteerHours
 );
 
 module.exports = router;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Loader2, Plus, Pencil, Trash2, Save, X, Info } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Save, Info } from "lucide-react";
 
 const SERVICE_TYPES = [
   { value: "shelter", label: "Shelter Services" },
