@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,11 +15,11 @@ export const ForgotPassword = () => {
 
     try {
       const response = await axios.post("/api/auth/reset-password", { email });
-      toast.success(response.data.message);
+      toast.success(t("forgotPassword.successMessage"));
       setEmail("");
     } catch (error) {
       toast.error(
-        error.response?.data?.error || "Failed to send reset instructions"
+        error.response?.data?.error || t("forgotPassword.errorMessage")
       );
     } finally {
       setIsSubmitting(false);
@@ -26,11 +28,11 @@ export const ForgotPassword = () => {
 
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">Reset Password</h2>
+      <h2 className="text-2xl font-bold mb-6">{t("forgotPassword.title")}</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Email Address
+            {t("forgotPassword.emailLabel")}
           </label>
           <input
             type="email"
@@ -48,7 +50,9 @@ export const ForgotPassword = () => {
           {isSubmitting ? (
             <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
           ) : null}
-          {isSubmitting ? "Sending..." : "Send Reset Instructions"}
+          {isSubmitting
+            ? t("forgotPassword.sending")
+            : t("forgotPassword.sendInstructions")}
         </button>
       </form>
     </div>

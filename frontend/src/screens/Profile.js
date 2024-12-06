@@ -3,10 +3,13 @@ import { AuthContext } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 const Profile = () => {
   const { authState } = useContext(AuthContext);
   const isOrg = authState.user && authState.user.accountType === "org";
+  const { t } = useTranslation();
+
   const states = [
     "AL",
     "AK",
@@ -92,9 +95,9 @@ const Profile = () => {
       } catch (error) {
         console.error("Error fetching profile data:", error);
         toast.error(
-          `Failed to load ${
-            isOrg ? "organization" : "user"
-          } data. Please try again.`
+          t("profile.errorFetching", {
+            type: isOrg ? t("profile.org") : t("profile.user"),
+          })
         );
       } finally {
         setIsLoading(false);
@@ -126,10 +129,10 @@ const Profile = () => {
         },
       });
 
-      toast.success("Profile updated successfully.");
+      toast.success(t("profile.successSaving"));
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to update profile. Please try again.");
+      toast.error(t("profile.errorSaving"));
     } finally {
       setIsSaving(false);
     }
@@ -152,10 +155,10 @@ const Profile = () => {
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">
-            {isOrg ? "Organization" : "User"} Profile
+            {isOrg ? t("profile.org") : t("profile.user")} {t("profile.title")}
           </h2>
           <p className="mt-1 text-sm text-gray-600">
-            Update your profile information and account settings
+            {t("profile.description")}{" "}
           </p>
         </div>
 
@@ -163,7 +166,7 @@ const Profile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="name" className={labelClasses}>
-                Name
+                {t("profile.nameLabel")}
               </label>
               <input
                 id="name"
@@ -179,7 +182,7 @@ const Profile = () => {
             {isOrg && (
               <div>
                 <label htmlFor="type" className={labelClasses}>
-                  Organization Type
+                  {t("profile.typeLabel")}
                 </label>
                 <select
                   id="type"
@@ -189,16 +192,18 @@ const Profile = () => {
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select type...</option>
-                  <option value="shelter">Shelter</option>
-                  <option value="foodbank">Food Bank</option>
+                  <option value="">{t("profile.selectType")}</option>
+                  <option value="shelter">{t("profile.shelterOption")}</option>
+                  <option value="foodbank">
+                    {t("profile.foodBankOption")}
+                  </option>
                 </select>
               </div>
             )}
 
             <div className="md:col-span-2">
               <label htmlFor="address" className={labelClasses}>
-                Address
+                {t("profile.addressLabel")}
               </label>
               <input
                 id="address"
@@ -213,7 +218,7 @@ const Profile = () => {
 
             <div className="md:col-span-2">
               <label htmlFor="address2" className={labelClasses}>
-                Address Line 2
+                {t("profile.streetLabel")}
               </label>
               <input
                 id="address2"
@@ -227,7 +232,7 @@ const Profile = () => {
 
             <div>
               <label htmlFor="city" className={labelClasses}>
-                City
+                {t("profile.cityLabel")}
               </label>
               <input
                 id="city"
@@ -242,7 +247,7 @@ const Profile = () => {
 
             <div>
               <label htmlFor="state" className={labelClasses}>
-                State
+                {t("profile.stateLabel")}
               </label>
               <select
                 id="state"
@@ -263,7 +268,7 @@ const Profile = () => {
 
             <div>
               <label htmlFor="zip" className={labelClasses}>
-                ZIP Code
+                {t("profile.zipLabel")}
               </label>
               <input
                 id="zip"
@@ -278,7 +283,7 @@ const Profile = () => {
 
             <div>
               <label htmlFor="phone" className={labelClasses}>
-                Phone Number
+                {t("profile.phoneLabel")}
               </label>
               <input
                 id="phone"
@@ -295,7 +300,7 @@ const Profile = () => {
               <>
                 <div>
                   <label htmlFor="latitude" className={labelClasses}>
-                    Latitude
+                    {t("profile.latitude")}
                   </label>
                   <input
                     id="latitude"
@@ -309,7 +314,7 @@ const Profile = () => {
 
                 <div>
                   <label htmlFor="longitude" className={labelClasses}>
-                    Longitude
+                    {t("profile.longitude")}
                   </label>
                   <input
                     id="longitude"
@@ -325,7 +330,7 @@ const Profile = () => {
 
             <div>
               <label htmlFor="email" className={labelClasses}>
-                Email
+                {t("profile.emailLabel")}
               </label>
               <input
                 id="email"
@@ -342,7 +347,7 @@ const Profile = () => {
             {isOrg && (
               <div>
                 <label htmlFor="website" className={labelClasses}>
-                  Website
+                  {t("profile.websiteLabel")}
                 </label>
                 <input
                   id="website"
@@ -365,10 +370,10 @@ const Profile = () => {
               {isSaving ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                  Saving...
+                  {t("profile.saving")}
                 </>
               ) : (
-                "Save Changes"
+                t("profile.saveButton")
               )}
             </button>
           </div>

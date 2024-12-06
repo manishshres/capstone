@@ -2,9 +2,12 @@ import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { Menu, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { authState, logout } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   return (
     <header className="bg-glaucous shadow-md">
@@ -27,17 +30,18 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
             to="/"
             className="flex items-center text-white text-3xl font-bold"
           >
-            Capestone
+            {t("app.title")}
           </Link>
         </div>
 
         <nav className="flex items-center space-x-4">
+          <LanguageSwitcher />
           {authState.isAuthenticated ? (
             <button
               onClick={logout}
               className="bg-saffron hover:bg-saffron-600 text-black font-bold py-2 px-4 rounded shadow transition duration-300"
             >
-              Logout
+              {t("app.logout")}
             </button>
           ) : (
             <>
@@ -45,13 +49,13 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
                 to="/login"
                 className="bg-glaucous-400 hover:bg-glaucous-500 text-white font-semibold py-2 px-4 rounded shadow transition duration-300"
               >
-                Log In
+                {t("app.login")}
               </Link>
               <Link
                 to="/register"
                 className="bg-saffron hover:bg-saffron-600 text-black font-bold py-2 px-4 rounded shadow transition duration-300"
               >
-                Register
+                {t("app.register")}
               </Link>
             </>
           )}
