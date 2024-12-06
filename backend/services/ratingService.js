@@ -143,18 +143,20 @@ exports.getRatings = async (organizationId) => {
       });
     }
 
+    // If organization doesn't exist, return empty array
     if (!organization) {
-      throw new Error("Organization not found");
+      return [];
     }
 
     const orgMongoId = organization.userId.toString();
     const ratingsList = await ratings
       .find({ organizationId: orgMongoId })
       .toArray();
+
     return ratingsList;
   } catch (error) {
     logger.error("Error getting ratings:", error);
-    throw error;
+    return []; // Return empty array instead of throwing error
   }
 };
 
@@ -174,8 +176,9 @@ exports.getAverageRating = async (organizationId) => {
       });
     }
 
+    // If organization doesn't exist, return default values
     if (!organization) {
-      throw new Error("Organization not found");
+      return { averageRating: 0, totalRatings: 0 };
     }
 
     const orgMongoId = organization.userId.toString();
@@ -203,6 +206,6 @@ exports.getAverageRating = async (organizationId) => {
     };
   } catch (error) {
     logger.error("Error getting average rating:", error);
-    throw error;
+    return { averageRating: 0, totalRatings: 0 }; // Return default values instead of throwing error
   }
 };

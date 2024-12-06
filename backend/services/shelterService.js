@@ -1,6 +1,7 @@
 const https = require("https");
+const { calculateDistance } = require("../utils/distance");
+const { processBusinessHours } = require("../utils/processBusinessHours");
 
-// Function to make an API request
 const makeApiRequest = (path) => {
   return new Promise((resolve, reject) => {
     const options = {
@@ -14,13 +15,10 @@ const makeApiRequest = (path) => {
       },
     };
 
-    // Create a new request to the API
     const req = https.request(options, (res) => {
       const chunks = [];
 
-      res.on("data", (chunk) => {
-        chunks.push(chunk);
-      });
+      res.on("data", (chunk) => chunks.push(chunk));
 
       res.on("end", () => {
         const body = Buffer.concat(chunks);
@@ -32,48 +30,163 @@ const makeApiRequest = (path) => {
       });
     });
 
-    // Handle request errors
-    req.on("error", (error) => {
-      reject(error);
-    });
-
-    req.end(); // End the request
+    req.on("error", (error) => reject(error));
+    req.end();
   });
 };
 
-// Function to fetch shelters by ZIP code
-const getSheltersByZipcode = (zipcode) => {
-  return makeApiRequest(`/resources?zipcode=${encodeURIComponent(zipcode)}`);
+const scoreShelter = (shelter, userPreferences) => {
+  let totalPossiblePoints = 0;
+  let earnedPoints = 0;
+
+  // Distance scoring (max 30 points)
+  if (userPreferences.userLocation && shelter.latitude && shelter.longitude) {
+    totalPossiblePoints += 30;
+    const distance = calculateDistance(
+      userPreferences.userLocation[0],
+      userPreferences.userLocation[1],
+      parseFloat(shelter.latitude),
+      parseFloat(shelter.longitude)
+    );
+
+    shelter.distanceInMiles = parseFloat(distance.toFixed(2));
+    earnedPoints += Math.max(30 - distance * 2, 0);
+  }
+
+  // Type matching (20 points)
+  if (userPreferences.type) {
+    totalPossiblePoints += 20;
+    if (shelter.type === userPreferences.type) {
+      earnedPoints += 20;
+    }
+  }
+
+  // Service availability scoring (15 points)
+  totalPossiblePoints += 15;
+  if (shelter.business_hours) {
+    const { isOpen } = processBusinessHours(shelter.business_hours);
+    if (isOpen) earnedPoints += 15;
+  }
+
+  // Contact information scoring (15 points total)
+  totalPossiblePoints += 15;
+  if (shelter.phone_number) earnedPoints += 5;
+  if (shelter.website) earnedPoints += 5;
+  if (shelter.email) earnedPoints += 5;
+
+  // Service matching scoring (20 points)
+  if (userPreferences.serviceNeeds?.length > 0) {
+    totalPossiblePoints += 20;
+    if (shelter.description) {
+      const matchedServices = userPreferences.serviceNeeds.filter((need) =>
+        shelter.description.toLowerCase().includes(need.toLowerCase())
+      );
+      earnedPoints +=
+        (matchedServices.length / userPreferences.serviceNeeds.length) * 20;
+    }
+  }
+
+  // Calculate percentage score
+  const percentageScore =
+    totalPossiblePoints > 0 ? (earnedPoints / totalPossiblePoints) * 100 : 0;
+
+  return {
+    ...shelter,
+    matchScore: Math.round(percentageScore * 100) / 100,
+    matchScoreDetails: {
+      totalPossible: totalPossiblePoints,
+      earned: earnedPoints,
+      percentage: Math.round(percentageScore * 100) / 100,
+    },
+    formattedAddress:
+      shelter.full_address ||
+      `${shelter.address || ""}, ${shelter.city}, ${shelter.state} ${
+        shelter.zipcode
+      }`,
+    contactInfo: {
+      phone: shelter.phone_number,
+      website: shelter.website,
+      email: shelter.email,
+    },
+    serviceDetails: {
+      type: shelter.type,
+      hours: processBusinessHours(shelter.business_hours).schedule,
+      description: shelter.description,
+    },
+  };
 };
 
-// Function to fetch shelters by location (latitude & longitude)
-const getSheltersByLocation = (lat, lng, radius = 1.4) => {
-  return makeApiRequest(
-    `/resources?latitude=${encodeURIComponent(
-      lat
-    )}&longitude=${encodeURIComponent(lng)}&radius=${encodeURIComponent(
-      radius
-    )}`
-  );
+exports.getSheltersByZipcode = async (zipcode, userPreferences = {}) => {
+  try {
+    const shelters = await makeApiRequest(
+      `/resources?zipcode=${encodeURIComponent(zipcode)}`
+    );
+    if (!Array.isArray(shelters)) return [];
+
+    return shelters
+      .map((shelter) => scoreShelter(shelter, userPreferences))
+      .sort((a, b) => b.matchScore - a.matchScore);
+  } catch (error) {
+    console.error("Error in getSheltersByZipcode:", error);
+    return [];
+  }
 };
 
-// Function to fetch shelters by city and state
-const getSheltersByStateCity = (state, city) => {
-  return makeApiRequest(
-    `/resources?state=${encodeURIComponent(state)}&city=${encodeURIComponent(
-      city
-    )}`
-  );
+exports.getSheltersByLocation = async (
+  lat,
+  lng,
+  radius = 1.4,
+  userPreferences = {}
+) => {
+  try {
+    const shelters = await makeApiRequest(
+      `/resources?latitude=${encodeURIComponent(
+        lat
+      )}&longitude=${encodeURIComponent(lng)}&radius=${encodeURIComponent(
+        radius
+      )}`
+    );
+
+    if (!Array.isArray(shelters)) return [];
+
+    return shelters
+      .map((shelter) =>
+        scoreShelter(shelter, { ...userPreferences, userLocation: [lat, lng] })
+      )
+      .sort((a, b) => b.matchScore - a.matchScore);
+  } catch (error) {
+    console.error("Error in getSheltersByLocation:", error);
+    return [];
+  }
 };
 
-// Function to fetch shelter details by ID
-const getShelterById = (id) => {
-  return makeApiRequest(`/resources/${encodeURIComponent(id)}`);
+exports.getSheltersByStateCity = async (state, city, userPreferences = {}) => {
+  try {
+    const shelters = await makeApiRequest(
+      `/resources?state=${encodeURIComponent(state)}&city=${encodeURIComponent(
+        city
+      )}`
+    );
+
+    if (!Array.isArray(shelters)) return [];
+
+    return shelters
+      .map((shelter) => scoreShelter(shelter, userPreferences))
+      .sort((a, b) => b.matchScore - a.matchScore);
+  } catch (error) {
+    console.error("Error in getSheltersByStateCity:", error);
+    return [];
+  }
 };
 
-module.exports = {
-  getSheltersByZipcode,
-  getSheltersByLocation,
-  getSheltersByStateCity,
-  getShelterById,
+exports.getShelterById = async (id) => {
+  try {
+    const shelter = await makeApiRequest(
+      `/resources/${encodeURIComponent(id)}`
+    );
+    return shelter ? scoreShelter(shelter, {}) : null;
+  } catch (error) {
+    console.error("Error in getShelterById:", error);
+    return null;
+  }
 };
