@@ -1,6 +1,14 @@
 const https = require("https");
 const { calculateDistance } = require("../utils/distance");
 const { processBusinessHours } = require("../utils/processBusinessHours");
+const ratingService = require("../services/ratingService");
+
+const DISTANCE_MAX_POINTS = 30;
+const TYPE_MAX_POINTS = 20;
+const AVAILABILITY_MAX_POINTS = 15;
+const RATING_MAX_POINTS = 20;
+const CONTACT_MAX_POINTS = 15; // 5 points each for phone, website, email
+const SERVICE_NEEDS_MAX_POINTS = 20;
 
 const makeApiRequest = (path) => {
   return new Promise((resolve, reject) => {
@@ -35,54 +43,86 @@ const makeApiRequest = (path) => {
   });
 };
 
+function calculateRatingPoints(averageRating, maxPoints) {
+  if (
+    typeof averageRating !== "number" ||
+    averageRating < 0 ||
+    averageRating > 5
+  ) {
+    return 0;
+  }
+  return (averageRating / 5) * maxPoints;
+}
+
 const scoreShelter = (shelter, userPreferences) => {
   let totalPossiblePoints = 0;
   let earnedPoints = 0;
 
-  // Distance scoring (max 30 points)
+  // Distance scoring (max DISTANCE_MAX_POINTS points)
+  // Only factor in distance if userLocation is provided
   if (userPreferences.userLocation && shelter.latitude && shelter.longitude) {
-    totalPossiblePoints += 30;
+    totalPossiblePoints += DISTANCE_MAX_POINTS;
     const distance = calculateDistance(
       userPreferences.userLocation[0],
       userPreferences.userLocation[1],
       parseFloat(shelter.latitude),
       parseFloat(shelter.longitude)
     );
-
     shelter.distanceInMiles = parseFloat(distance.toFixed(2));
-    earnedPoints += Math.max(30 - distance * 2, 0);
+
+    // Deduct points for greater distances. (2 points lost per mile)
+    const distancePenalty = distance * 2;
+    earnedPoints += Math.max(DISTANCE_MAX_POINTS - distancePenalty, 0);
   }
 
-  // Type matching (20 points)
+  // Type matching (TYPE_MAX_POINTS points)
+  // Only factor in type if userPreferences.type is provided
   if (userPreferences.type) {
-    totalPossiblePoints += 20;
+    totalPossiblePoints += TYPE_MAX_POINTS;
     if (shelter.type === userPreferences.type) {
-      earnedPoints += 20;
+      earnedPoints += TYPE_MAX_POINTS;
     }
   }
 
-  // Service availability scoring (15 points)
-  totalPossiblePoints += 15;
+  // Service availability scoring (AVAILABILITY_MAX_POINTS points)
+  // Availability doesn't depend on user input, so always factor it in
+  totalPossiblePoints += AVAILABILITY_MAX_POINTS;
   if (shelter.business_hours) {
     const { isOpen } = processBusinessHours(shelter.business_hours);
-    if (isOpen) earnedPoints += 15;
+    if (isOpen) earnedPoints += AVAILABILITY_MAX_POINTS;
   }
 
-  // Contact information scoring (15 points total)
-  totalPossiblePoints += 15;
+  // Rating scoring (RATING_MAX_POINTS points)
+  // If rating exists, factor it in regardless of user input (optional)
+  if (shelter.rating && typeof shelter.rating.averageRating === "number") {
+    totalPossiblePoints += RATING_MAX_POINTS;
+    earnedPoints += calculateRatingPoints(
+      shelter.rating.averageRating,
+      RATING_MAX_POINTS
+    );
+  }
+
+  // Contact information scoring (CONTACT_MAX_POINTS points)
+  // Always factor contact info
+  totalPossiblePoints += CONTACT_MAX_POINTS;
   if (shelter.phone_number) earnedPoints += 5;
   if (shelter.website) earnedPoints += 5;
   if (shelter.email) earnedPoints += 5;
 
-  // Service matching scoring (20 points)
-  if (userPreferences.serviceNeeds?.length > 0) {
-    totalPossiblePoints += 20;
+  // Service matching scoring (SERVICE_NEEDS_MAX_POINTS points)
+  // Only factor in if userPreferences.serviceNeeds is provided and not empty
+  if (
+    Array.isArray(userPreferences.serviceNeeds) &&
+    userPreferences.serviceNeeds.length > 0
+  ) {
+    totalPossiblePoints += SERVICE_NEEDS_MAX_POINTS;
     if (shelter.description) {
       const matchedServices = userPreferences.serviceNeeds.filter((need) =>
         shelter.description.toLowerCase().includes(need.toLowerCase())
       );
-      earnedPoints +=
-        (matchedServices.length / userPreferences.serviceNeeds.length) * 20;
+      const matchRatio =
+        matchedServices.length / userPreferences.serviceNeeds.length;
+      earnedPoints += matchRatio * SERVICE_NEEDS_MAX_POINTS;
     }
   }
 
@@ -95,7 +135,7 @@ const scoreShelter = (shelter, userPreferences) => {
     matchScore: Math.round(percentageScore * 100) / 100,
     matchScoreDetails: {
       totalPossible: totalPossiblePoints,
-      earned: earnedPoints,
+      earned: Math.round(earnedPoints * 100) / 100,
       percentage: Math.round(percentageScore * 100) / 100,
     },
     formattedAddress:
@@ -115,6 +155,24 @@ const scoreShelter = (shelter, userPreferences) => {
     },
   };
 };
+// Updated functions to attach rating
+async function attachRatingsToShelters(shelters) {
+  return Promise.all(
+    shelters.map(async (shelter) => {
+      // Suppose shelter.id corresponds to the organizationId
+      const { averageRating, totalRatings } =
+        await ratingService.getAverageRating(shelter.id);
+
+      return {
+        ...shelter,
+        rating: {
+          averageRating,
+          totalRatings,
+        },
+      };
+    })
+  );
+}
 
 exports.getSheltersByZipcode = async (zipcode, userPreferences = {}) => {
   try {
@@ -123,11 +181,12 @@ exports.getSheltersByZipcode = async (zipcode, userPreferences = {}) => {
     );
     if (!Array.isArray(shelters)) return [];
 
-    return shelters
+    const scoredShelters = shelters
       .map((shelter) => scoreShelter(shelter, userPreferences))
       .sort((a, b) => b.matchScore - a.matchScore);
+
+    return await attachRatingsToShelters(scoredShelters);
   } catch (error) {
-    console.error("Error in getSheltersByZipcode:", error);
     return [];
   }
 };
@@ -149,13 +208,14 @@ exports.getSheltersByLocation = async (
 
     if (!Array.isArray(shelters)) return [];
 
-    return shelters
+    const scoredShelters = shelters
       .map((shelter) =>
         scoreShelter(shelter, { ...userPreferences, userLocation: [lat, lng] })
       )
       .sort((a, b) => b.matchScore - a.matchScore);
+
+    return await attachRatingsToShelters(scoredShelters);
   } catch (error) {
-    console.error("Error in getSheltersByLocation:", error);
     return [];
   }
 };
@@ -170,11 +230,12 @@ exports.getSheltersByStateCity = async (state, city, userPreferences = {}) => {
 
     if (!Array.isArray(shelters)) return [];
 
-    return shelters
+    const scoredShelters = shelters
       .map((shelter) => scoreShelter(shelter, userPreferences))
       .sort((a, b) => b.matchScore - a.matchScore);
+
+    return await attachRatingsToShelters(scoredShelters);
   } catch (error) {
-    console.error("Error in getSheltersByStateCity:", error);
     return [];
   }
 };
@@ -184,9 +245,19 @@ exports.getShelterById = async (id) => {
     const shelter = await makeApiRequest(
       `/resources/${encodeURIComponent(id)}`
     );
-    return shelter ? scoreShelter(shelter, {}) : null;
+
+    if (!shelter) return null;
+
+    // Score the single shelter
+    let scoredShelter = scoreShelter(shelter, {});
+
+    // Attach rating
+    const { averageRating, totalRatings } =
+      await ratingService.getAverageRating(shelter.id);
+    scoredShelter.rating = { averageRating, totalRatings };
+
+    return scoredShelter;
   } catch (error) {
-    console.error("Error in getShelterById:", error);
     return null;
   }
 };

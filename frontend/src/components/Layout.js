@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Navbar from "./Navbar";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
+import Navbar from "./Common/Navbar";
+import Sidebar from "./Common/Sidebar";
+import Footer from "./Common/Footer";
 import { ToastContainer } from "react-toastify";
 import { AuthContext } from "../contexts/AuthContext";
 import "react-toastify/dist/ReactToastify.css";

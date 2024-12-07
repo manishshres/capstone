@@ -14,7 +14,7 @@ exports.createRating = async (req, res) => {
       userId,
       ratingData
     );
-    res.status(201).json({ message: "Rating created successfully", ratingId });
+    res.status(201).json({ message: "Rating created successfully" });
   } catch (error) {
     if (error.message.includes("Organization not found")) {
       res.status(400).json({ error: error.message });

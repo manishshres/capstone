@@ -163,7 +163,8 @@ const ShelterCard = ({ shelter, userType, userId }) => {
         <div className="mt-4 space-y-2">
           <p className="text-sm text-gray-600 flex items-center">
             <MapPin className="h-4 w-4 mr-2" />
-            {shelter.formattedAddress || shelter.full_address}
+            {shelter.formattedAddress || shelter.full_address} 
+            {shelter.distance} miles away
           </p>
 
           {shelter.contactInfo?.phone && (

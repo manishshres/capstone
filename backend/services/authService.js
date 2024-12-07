@@ -115,12 +115,17 @@ exports.resetPassword = async (email) => {
 };
 
 // Change password
-exports.changePassword = async (userId, currentPassword, newPassword) => {
+exports.changePassword = async (
+  userId,
+  email,
+  currentPassword,
+  newPassword
+) => {
   try {
-    // First verify current password
+    // Verify current password
     const { data: userData, error: userError } =
       await supabase.auth.signInWithPassword({
-        email: email,
+        email,
         password: currentPassword,
       });
 
@@ -130,7 +135,6 @@ exports.changePassword = async (userId, currentPassword, newPassword) => {
     const { data, error } = await supabase.auth.updateUser({
       password: newPassword,
     });
-
     if (error) throw new Error(error.message);
 
     // Update MongoDB timestamp

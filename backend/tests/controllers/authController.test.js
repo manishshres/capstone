@@ -164,6 +164,7 @@ describe("Auth Controller", () => {
 
     it("should handle unexpected errors", async () => {
       const error = new Error("Unexpected error");
+      // Mocking res.status to throw error for testing error scenario
       res.status.mockImplementationOnce(() => {
         throw error;
       });
@@ -173,6 +174,166 @@ describe("Auth Controller", () => {
       expect(logger.error).toHaveBeenCalledWith("Login error:", error);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
+    });
+  });
+
+  describe("resetPassword", () => {
+    beforeEach(() => {
+      req.body = { email: "test@example.com" };
+    });
+
+    it("should reset password successfully", async () => {
+      authService.resetPassword.mockResolvedValue({ success: true });
+
+      await authController.resetPassword(req, res);
+
+      expect(authService.resetPassword).toHaveBeenCalledWith(
+        "test@example.com"
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Password reset instructions sent to your email",
+      });
+    });
+
+    it("should handle reset password error", async () => {
+      authService.resetPassword.mockResolvedValue({ error: "Reset failed" });
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: "Reset failed" });
+    });
+
+    it("should handle unexpected errors", async () => {
+      authService.resetPassword.mockRejectedValue(
+        new Error("Unexpected error")
+      );
+
+      await authController.resetPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to process password reset",
+      });
+    });
+  });
+
+  describe("changePassword", () => {
+    beforeEach(() => {
+      req.body = {
+        currentPassword: "oldPass",
+        newPassword: "newPass",
+      };
+      req.user = { userId: "123" };
+    });
+
+    it("should change password successfully", async () => {
+      authService.changePassword.mockResolvedValue({ success: true });
+
+      await authController.changePassword(req, res);
+
+      expect(authService.changePassword).toHaveBeenCalledWith(
+        "123",
+        "oldPass",
+        "newPass"
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Password updated successfully",
+      });
+    });
+
+    it("should handle missing current or new password", async () => {
+      req.body = { currentPassword: "", newPassword: "" };
+
+      await authController.changePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Both current and new password are required",
+      });
+    });
+
+    it("should handle change password errors from service", async () => {
+      authService.changePassword.mockResolvedValue({
+        error: "Current password is incorrect",
+      });
+
+      await authController.changePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Current password is incorrect",
+      });
+    });
+
+    it("should handle unexpected errors", async () => {
+      authService.changePassword.mockRejectedValue(
+        new Error("Unexpected error")
+      );
+
+      await authController.changePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to change password",
+      });
+    });
+  });
+
+  describe("updatePasswordWithToken", () => {
+    beforeEach(() => {
+      req.body = { newPassword: "newPass123" };
+    });
+
+    it("should update password with token successfully", async () => {
+      authService.updatePasswordWithToken.mockResolvedValue({ success: true });
+
+      await authController.updatePasswordWithToken(req, res);
+
+      expect(authService.updatePasswordWithToken).toHaveBeenCalledWith(
+        "newPass123"
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Password updated successfully",
+      });
+    });
+
+    it("should handle missing new password", async () => {
+      req.body = {};
+
+      await authController.updatePasswordWithToken(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "New password is required",
+      });
+    });
+
+    it("should handle update password token errors", async () => {
+      authService.updatePasswordWithToken.mockResolvedValue({
+        error: "Update failed",
+      });
+
+      await authController.updatePasswordWithToken(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: "Update failed" });
+    });
+
+    it("should handle unexpected errors", async () => {
+      authService.updatePasswordWithToken.mockRejectedValue(
+        new Error("Unexpected error")
+      );
+
+      await authController.updatePasswordWithToken(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to update password",
+      });
     });
   });
 });

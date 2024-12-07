@@ -1,5 +1,4 @@
 const { connectToDatabase } = require("../config/mongoDbClient");
-// import { ObjectId } from "bson";
 const { ObjectId } = require("mongodb");
 
 const getObjectID = (jobId) => {
@@ -306,7 +305,7 @@ exports.getOrganizationApplications = async (filters) => {
 
     return filteredApplications;
   } catch (error) {
-    console.error("Error in getOrganizationApplications:", error);
+    //console.error("Error in getOrganizationApplications:", error);
     throw error;
   }
 };
@@ -362,10 +361,10 @@ exports.getVolunteerApplications = async (volunteerId) => {
     // Sort by application date (most recent first)
     applications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
 
-    console.log("Found applications:", applications.length);
+    //console.log("Found applications:", applications.length);
     return applications;
   } catch (error) {
-    console.error("Error in getVolunteerApplications:", error);
+    //console.error("Error in getVolunteerApplications:", error);
     throw error;
   }
 };
@@ -409,7 +408,7 @@ exports.withdrawApplication = async (jobId, volunteerId) => {
       result: result,
     };
   } catch (error) {
-    console.error("Error in withdrawApplication:", error);
+    //console.error("Error in withdrawApplication:", error);
     throw error;
   }
 };
@@ -479,7 +478,7 @@ exports.getOrganizationVolunteers = async (organizationId) => {
 
     return volunteers.filter(Boolean);
   } catch (error) {
-    console.error("Error in getOrganizationVolunteers:", error);
+    //console.error("Error in getOrganizationVolunteers:", error);
     throw error;
   }
 };
@@ -504,7 +503,7 @@ exports.updateVolunteerHours = async (jobId, volunteerId, hours) => {
 
     return { success: true, result };
   } catch (error) {
-    console.error("Error in updateVolunteerHours:", error);
+    //console.error("Error in updateVolunteerHours:", error);
     throw error;
   }
 };

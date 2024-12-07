@@ -4,7 +4,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { AuthContext } from "../contexts/AuthContext";
 import SearchBar from "../components/SearchBar";
-import ShelterList from "../components/ShelterList";
+import ShelterList from "../components/Shelter/ShelterList";
+import FilterSection from "../components/Filters/FilterSection";
+import { applyFilters } from "../lib/filterUtils";
 
 const STORAGE_KEY = "dashboard_search_state";
 
@@ -40,6 +42,17 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [userLocation, setUserLocation] = useState(null);
+
+  const [filters, setFilters] = useState({
+    type: "",
+    distance: "5",
+    availability: "",
+    minMatchScore: 0,
+    minRating: 0,
+  });
+
+  const filteredShelters = applyFilters(shelters, filters);
+  console.log(filteredShelters);
 
   // Get user's location on mount
   useEffect(() => {
@@ -166,37 +179,41 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-md">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Find Shelters & Services
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Search for shelters and services in your area
-          </p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Find Shelters & Services
+        </h1>
+        <p className="mt-1 text-sm text-gray-600">
+          Search for shelters and services in your area
+        </p>
+      </div>
+
+      {/* Search Bar */}
+      <SearchBar
+        searchType={searchType}
+        setSearchType={setSearchType}
+        searchData={searchData}
+        setSearchData={setSearchData}
+        isLoading={isLoading}
+        error={error}
+        onSearch={fetchShelters}
+        onClear={handleClearSearch}
+        handleUseCurrentLocation={handleUseCurrentLocation}
+        sheltersFound={shelters.length}
+      />
+
+      <div className="mt-6 flex gap-6">
+        {/* Filters - Left Side */}
+        <div className="w-64 flex-shrink-0">
+          <FilterSection filters={filters} setFilters={setFilters} />
         </div>
 
-        {/* Search Bar */}
-        <SearchBar
-          searchType={searchType}
-          setSearchType={setSearchType}
-          searchData={searchData}
-          setSearchData={setSearchData}
-          isLoading={isLoading}
-          error={error}
-          onSearch={fetchShelters}
-          onClear={handleClearSearch}
-          handleUseCurrentLocation={handleUseCurrentLocation}
-          sheltersFound={shelters.length}
-        />
-
-        {/* Results */}
-        <div className="p-6">
+        {/* Results - Right Side */}
+        <div className="flex-grow">
           <ShelterList
+            shelters={filteredShelters}
             isLoading={isLoading}
             error={error}
-            shelters={shelters}
             userType={authState.user?.accountType}
             userId={authState.user?.id}
             searchType={searchType}
