@@ -88,6 +88,56 @@
     "noSheltersFound": "No shelters found",
     "tryDifferentLocation": "Try searching in a different location"
   },
+  "searchBar": {
+    "searchByZip": "Search by ZIP",
+    "searchByCityState": "Search by City/State",
+    "useCurrentLocation": "Use Current Location",
+    "zipPlaceholder": "Enter ZIP code (e.g., 12345)",
+    "cityPlaceholder": "Enter city",
+    "selectState": "Select State",
+    "clearSearch": "Clear Search",
+    "searching": "Searching...",
+    "search": "Search"
+  },
+  "filters": {
+    "title": "Filters",
+    "serviceType": "Service Type",
+    "serviceTypeOptions": {
+      "all": "All Types",
+      "foodBank": "Food Bank",
+      "shelter": "Shelter"
+    },
+    "availability": "Availability",
+    "availabilityOptions": {
+      "any": "Any",
+      "open": "Currently Open",
+      "closed": "Closed"
+    },
+    "distance": "Distance",
+    "distanceOptions": {
+      "within1": "Within 1 mile",
+      "within2": "Within 2 miles",
+      "within5": "Within 5 miles",
+      "within10": "Within 10 miles"
+    },
+    "minMatchScore": "Minimum Match Score",
+    "serviceTypeOptions": {
+      "all": "All Types",
+      "foodBank": "Food Bank",
+      "shelter": "Shelter"
+    },
+    "distanceOptions": {
+      "within1": "Within 1 mile",
+      "within2": "Within 2 miles",
+      "within5": "Within 5 miles",
+      "within10": "Within 10 miles"
+    },
+    "availabilityOptions": {
+      "any": "Any",
+      "open": "Currently Open",
+      "closed": "Closed"
+    }
+  },
   "profile": {
     "title": "Profile",
     "description": "Update your profile information and account settings",

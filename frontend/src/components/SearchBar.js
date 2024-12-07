@@ -1,6 +1,7 @@
 import React from "react";
 import { MapPin, Building2, Navigation, Search, Loader2 } from "lucide-react";
 import { US_STATES } from "../lib/states";
+import { useTranslation } from "react-i18next";
 
 const SearchTypes = {
   ZIPCODE: "zipcode",
@@ -26,6 +27,8 @@ const SearchBar = ({
     onSearch();
   };
 
+  const { t } = useTranslation();
+
   // Render search input based on type
   const renderSearchInput = () => {
     switch (searchType) {
@@ -34,7 +37,7 @@ const SearchBar = ({
           <div className="relative">
             <input
               type="text"
-              placeholder="Enter ZIP code (e.g., 12345)"
+              placeholder={t("searchBar.zipPlaceholder")}
               value={searchData.zipcode}
               onChange={(e) =>
                 setSearchData((prev) => ({
@@ -55,7 +58,7 @@ const SearchBar = ({
             <div className="relative">
               <input
                 type="text"
-                placeholder="Enter city"
+                placeholder={t("searchBar.cityPlaceholder")}
                 value={searchData.city}
                 onChange={(e) =>
                   setSearchData((prev) => ({
@@ -78,7 +81,7 @@ const SearchBar = ({
                 }
                 className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Select State</option>
+                <option value="">{t("searchBar.selectState")}</option>
                 {US_STATES.map((state) => (
                   <option key={state.value} value={state.value}>
                     {state.label}
@@ -147,7 +150,7 @@ const SearchBar = ({
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            Search by ZIP
+            {t("searchBar.searchByZip")}
           </button>
           <button
             type="button"
@@ -158,7 +161,7 @@ const SearchBar = ({
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            Search by City/State
+            {t("searchBar.searchByCityState")}
           </button>
           <button
             type="button"
@@ -170,7 +173,7 @@ const SearchBar = ({
             }`}
           >
             <Navigation className="w-4 h-4 mr-2" />
-            Use Current Location
+            {t("searchBar.useCurrentLocation")}
           </button>
         </div>
       </div>
@@ -179,7 +182,7 @@ const SearchBar = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {renderSearchInput()}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600">{t(error)}</p>}
 
         <div className="flex justify-end space-x-4">
           {sheltersFound > 0 && (
@@ -188,7 +191,7 @@ const SearchBar = ({
               onClick={onClear}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
             >
-              Clear Search
+              {t("searchBar.clearSearch")}
             </button>
           )}
           <button
@@ -199,12 +202,12 @@ const SearchBar = ({
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                Searching...
+                {t("searchBar.searching")}
               </>
             ) : (
               <>
                 <Search className="mr-2 h-5 w-5" />
-                Search
+                {t("searchBar.search")}
               </>
             )}
           </button>

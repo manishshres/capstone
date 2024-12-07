@@ -88,6 +88,56 @@
     "noSheltersFound": "No se encontraron refugios",
     "tryDifferentLocation": "Intenta buscar en una ubicación diferente"
   },
+  "searchBar": {
+    "searchByZip": "Buscar por código postal",
+    "searchByCityState": "Buscar por ciudad/estado",
+    "useCurrentLocation": "Usar ubicación actual",
+    "zipPlaceholder": "Ingresa el código postal (por ejemplo, 12345)",
+    "cityPlaceholder": "Ingresa la ciudad",
+    "selectState": "Seleccionar estado",
+    "clearSearch": "Borrar búsqueda",
+    "searching": "Buscando...",
+    "search": "Buscar"
+  },
+  "filters": {
+    "title": "Filtros",
+    "serviceType": "Tipo de Servicio",
+    "serviceTypeOptions": {
+      "all": "Todos los Tipos",
+      "foodBank": "Banco de Alimentos",
+      "shelter": "Refugio"
+    },
+    "availability": "Disponibilidad",
+    "availabilityOptions": {
+      "any": "Cualquiera",
+      "open": "Actualmente Abierto",
+      "closed": "Cerrado"
+    },
+    "distance": "Distancia",
+    "distanceOptions": {
+      "within1": "A menos de 1 milla",
+      "within2": "A menos de 2 millas",
+      "within5": "A menos de 5 millas",
+      "within10": "A menos de 10 millas"
+    },
+    "minMatchScore": "Puntaje Mínimo de Coincidencia",
+    "serviceTypeOptions": {
+      "all": "Todos los Tipos",
+      "foodBank": "Banco de Alimentos",
+      "shelter": "Refugio"
+    },
+    "distanceOptions": {
+      "within1": "A menos de 1 milla",
+      "within2": "A menos de 2 millas",
+      "within5": "A menos de 5 millas",
+      "within10": "A menos de 10 millas"
+    },
+    "availabilityOptions": {
+      "any": "Cualquiera",
+      "open": "Actualmente Abierto",
+      "closed": "Cerrado"
+    }
+  },
   "profile": {
     "title": "Perfil",
     "description": "Actualiza la información de tu perfil y configuración de la cuenta",
